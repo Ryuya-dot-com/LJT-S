@@ -52,11 +52,11 @@
       schoolCode: '学校・所属コード（任意）',
       classCode: 'クラスコード（任意）',
       resultEmail: '結果送信用メール（任意）',
-      resultEmailHelp: 'GAS送信が設定されている場合のみ、希望者に結果コピーを送れます。',
+      resultEmailHelp: '実施者から案内がある場合のみ、希望者に結果コピーを送れます。',
       resultEmailCopy: 'このメールアドレスに結果コピーを送る',
       consentTitle: '参加前の確認',
       consentLead: '記録される内容を確認してください。',
-      consentBody: '回答、反応時間、音声再生状況、端末情報が研究チームの分析用データとして記録されます。GAS送信が設定されている場合は研究チーム管理のGoogle Sheetへ送信され、保持期間と利用範囲は実施者の承認済みプロトコルに従います。端末内にも一時保存され、終了時にCSVとして保存できます。参加は任意で、氏名は入力しなくても受験できます。',
+      consentBody: '回答、反応時間、音声再生状況、端末情報が研究チームの分析用データとして記録されます。実施者がオンライン回収を設定している場合は研究チームへ送信されます。端末内にも一時保存され、終了時にCSVとして保存できます。参加は任意で、氏名は入力しなくても受験できます。',
       consentCheck: '上記を確認しました。',
       instructionsTitle: '課題の説明',
       instructionsLead: '音声チェックの前に、課題の進め方を確認してください。',
@@ -102,10 +102,10 @@
       completeTitle: '終了しました',
       completeLead: '結果を確認し、必要に応じてCSVを保存してください。',
       recorded: '回答はこの端末に記録されました。CSVは安全網として保存できます。',
-      submissionNotConfigured: '自動送信は未設定です。CSVを保存してください。',
-      submissionQueued: '自動送信を準備しました。ネットワーク接続後に再試行できます。',
-      submissionAttempted: '自動送信を試行しました。CSVも安全網として保存してください。',
-      submissionFailed: '自動送信に失敗しました。CSVを保存し、必要に応じて再試行してください。',
+      submissionNotConfigured: '結果ファイルを保存してください。',
+      submissionQueued: '送信準備ができました。ネットワーク接続後に再試行できます。',
+      submissionAttempted: '結果送信を試行しました。結果ファイルも保存してください。',
+      submissionFailed: '結果送信に失敗しました。結果ファイルを保存し、必要に応じて再試行してください。',
       retrySubmission: '送信を再試行',
       rawScore: '素点',
       accuracy: '正答率',
@@ -134,11 +134,11 @@
       schoolCode: 'School / group code (optional)',
       classCode: 'Class code (optional)',
       resultEmail: 'Result email (optional)',
-      resultEmailHelp: 'A result copy can be sent only when GAS submission is configured.',
+      resultEmailHelp: 'A result copy can be emailed only when the administrator has provided this option.',
       resultEmailCopy: 'Send a result copy to this email address',
       consentTitle: 'Before You Start',
       consentLead: 'Confirm what will be recorded before continuing.',
-      consentBody: 'Responses, response times, audio playback status, and device information are recorded for research-team analysis. When GAS submission is configured, data is submitted to a Google Sheet managed by the research team; retention and use follow the administrator’s approved protocol. Data is also temporarily stored on this device and can be saved as CSV at the end. Participation is voluntary; your name is optional.',
+      consentBody: 'Responses, response times, audio playback status, and device information are recorded for research-team analysis. If the administrator has enabled online collection, session data is submitted to the research team. Data is also temporarily stored on this device and can be saved as CSV at the end. Participation is voluntary; your name is optional.',
       consentCheck: 'I have read this information.',
       instructionsTitle: 'Task Instructions',
       instructionsLead: 'Review how the task works before the sound check.',
@@ -184,10 +184,10 @@
       completeTitle: 'Session Complete',
       completeLead: 'Review your result and save the CSV file if needed.',
       recorded: 'Your responses have been recorded on this device. The CSV download remains available as a safety copy.',
-      submissionNotConfigured: 'Automatic submission is not configured. Save the CSV file.',
-      submissionQueued: 'Automatic submission is queued. Retry when network access is available.',
-      submissionAttempted: 'Automatic submission was attempted. Save the CSV as a safety copy.',
-      submissionFailed: 'Automatic submission failed. Save the CSV and retry if needed.',
+      submissionNotConfigured: 'Save the result file.',
+      submissionQueued: 'Submission is ready. Retry when network access is available.',
+      submissionAttempted: 'Result submission was attempted. Save the result file too.',
+      submissionFailed: 'Result submission failed. Save the result file and retry if needed.',
       retrySubmission: 'Retry submission',
       rawScore: 'Raw score',
       accuracy: 'Accuracy',
@@ -677,6 +677,24 @@
     const suggestedWasGenerated = draft.suggestedWasGenerated ?? !(latestPartial || recentId);
     const currentId = draft.idRaw || suggestedId;
     const resumable = getPartialSessionForParticipantId(currentId);
+    const showResultEmail = submissionSettings().enabled;
+    const resultEmailMarkup = showResultEmail
+      ? `
+          <div class="field">
+            <label for="result-email">${escapeHtml(t('resultEmail'))}</label>
+            <input id="result-email" type="email" autocomplete="email" value="${escapeHtml(draft.resultEmail || '')}">
+            <small>${escapeHtml(t('resultEmailHelp'))}</small>
+          </div>
+        `
+      : '';
+    const resultEmailCopyMarkup = showResultEmail
+      ? `
+        <label class="check-row result-email-row">
+          <input id="result-email-copy" type="checkbox"${draft.requestResultEmail ? ' checked' : ''}>
+          <span>${escapeHtml(t('resultEmailCopy'))}</span>
+        </label>
+      `
+      : '';
     const resumeMarkup = resumable
       ? `
         <section class="panel resume-panel">
@@ -718,16 +736,9 @@
             <label for="class-code">${escapeHtml(t('classCode'))}</label>
             <input id="class-code" type="text" autocomplete="off" value="${escapeHtml(draft.classCode || '')}">
           </div>
-          <div class="field">
-            <label for="result-email">${escapeHtml(t('resultEmail'))}</label>
-            <input id="result-email" type="email" autocomplete="email" value="${escapeHtml(draft.resultEmail || '')}">
-            <small>${escapeHtml(t('resultEmailHelp'))}</small>
-          </div>
+          ${resultEmailMarkup}
         </div>
-        <label class="check-row result-email-row">
-          <input id="result-email-copy" type="checkbox"${draft.requestResultEmail ? ' checked' : ''}>
-          <span>${escapeHtml(t('resultEmailCopy'))}</span>
-        </label>
+        ${resultEmailCopyMarkup}
         <div id="registration-error" class="notice error hidden"></div>
         <div class="actions">
           <button class="btn" id="continue-registration">${escapeHtml(isPublicMode() ? t('continueConsent') : t('continueInstructions'))}</button>
@@ -751,8 +762,8 @@
       const idRaw = typedId || suggestedId;
       const schoolCode = $('school-code').value.trim();
       const classCode = $('class-code').value.trim();
-      const resultEmail = $('result-email').value.trim();
-      const requestResultEmail = $('result-email-copy').checked;
+      const resultEmail = $('result-email')?.value.trim() || '';
+      const requestResultEmail = $('result-email-copy')?.checked || false;
       const suggestedFromInput = $('participant-id').dataset.suggestedId || suggestedId;
       const autoGenerated = suggestedWasGenerated && normalizeParticipantId(idRaw) === normalizeParticipantId(suggestedFromInput);
       if (!normalizeParticipantId(idRaw)) {
@@ -953,8 +964,7 @@
           </ul>
         </div>
         <table class="summary-table">
-          <tr><th>${escapeHtml(state.responseMapping.appropriateKey)}</th><td>${escapeHtml(t('appropriate'))}</td></tr>
-          <tr><th>${escapeHtml(state.responseMapping.inappropriateKey)}</th><td>${escapeHtml(t('inappropriate'))}</td></tr>
+          ${responseKeyRowsMarkup()}
         </table>
         <div class="actions">
           <button class="btn" id="start-practice">${escapeHtml(t('startPractice'))}</button>
@@ -972,8 +982,7 @@
         <h2 class="section-title">${escapeHtml(t('mainTitle'))}</h2>
         <p class="lead">${escapeHtml(t('mainLead'))}</p>
         <table class="summary-table">
-          <tr><th>${escapeHtml(state.responseMapping.appropriateKey)}</th><td>${escapeHtml(t('appropriate'))}</td></tr>
-          <tr><th>${escapeHtml(state.responseMapping.inappropriateKey)}</th><td>${escapeHtml(t('inappropriate'))}</td></tr>
+          ${responseKeyRowsMarkup()}
         </table>
         <div class="actions">
           <button class="btn" id="start-main">${escapeHtml(t('startMain'))}</button>
@@ -1033,8 +1042,7 @@
           <div id="status" class="status">${escapeHtml(t('getReady'))}</div>
           <button id="play-audio" class="btn secondary hidden">${escapeHtml(t('play'))}</button>
           <div id="responses" class="response-grid hidden">
-            <button class="btn yes" id="respond-appropriate"><span class="key">${escapeHtml(state.responseMapping.appropriateKey)}</span>${escapeHtml(t('appropriate'))}</button>
-            <button class="btn no" id="respond-inappropriate"><span class="key">${escapeHtml(state.responseMapping.inappropriateKey)}</span>${escapeHtml(t('inappropriate'))}</button>
+            ${responseButtonsMarkup()}
           </div>
           <div id="feedback" class="feedback"></div>
         </div>
@@ -1869,6 +1877,24 @@
 
   function answerLabel(answer) {
     return answer === 'appropriate' ? t('appropriate') : t('inappropriate');
+  }
+
+  function responseKeyRowsMarkup() {
+    return ['F', 'J'].map(key => `
+      <tr><th>${escapeHtml(key)}</th><td>${escapeHtml(answerLabel(state.responseMapping[key]))}</td></tr>
+    `).join('');
+  }
+
+  function responseButtonsMarkup() {
+    return ['F', 'J'].map(key => {
+      const response = state.responseMapping[key];
+      const className = response === 'appropriate' ? 'yes' : 'no';
+      return `
+        <button class="btn ${className}" id="respond-${escapeHtml(response)}">
+          <span class="key">${escapeHtml(key)}</span>${escapeHtml(answerLabel(response))}
+        </button>
+      `;
+    }).join('');
   }
 
   function makeResponseMapping(keymap, participantId, seed) {
