@@ -45,7 +45,7 @@
       resumeButton: '続きから再開',
       discardButton: '新しく始める',
       registrationTitle: 'LJT-S 受験情報',
-      registrationLead: '静かな場所で、イヤホンまたはヘッドフォンを使って受けてください。',
+      registrationLead: 'はじめに受験者情報を確認します。氏名は入力しなくても受験できます。',
       anonymousId: '匿名ID',
       anonymousIdHelp: '空欄の場合は匿名IDを自動発行します。提示順序とキー配置には小文字化したIDを使います。',
       optionalName: '氏名（任意）',
@@ -55,14 +55,20 @@
       resultEmailHelp: 'GAS送信が設定されている場合のみ、希望者に結果コピーを送れます。',
       resultEmailCopy: 'このメールアドレスに結果コピーを送る',
       consentTitle: '参加前の確認',
+      consentLead: '記録される内容を確認してください。',
       consentBody: '回答、反応時間、音声再生状況、端末情報が研究チームの分析用データとして記録されます。GAS送信が設定されている場合は研究チーム管理のGoogle Sheetへ送信され、保持期間と利用範囲は実施者の承認済みプロトコルに従います。端末内にも一時保存され、終了時にCSVとして保存できます。参加は任意で、氏名は入力しなくても受験できます。',
-      consentCheck: '上記を確認し、LJT-Sを開始します。',
+      consentCheck: '上記を確認しました。',
+      instructionsTitle: '課題の説明',
+      instructionsLead: '音声チェックの前に、課題の進め方を確認してください。',
       taskNotice: '英語の文を聞き、文中の語が文脈に合って自然に使われているかを判断してください。音声が終わるまで回答は受け付けません。',
       taskNoticeTouch: '英語の文を聞き、文中の語が文脈に合って自然に使われているかを画面上のボタンで判断してください。音声が終わるまで回答は受け付けません。',
       disclosure1: '練習4問の後に本試験40問があります。所要時間は約8〜10分です。',
       disclosure2: '制限時間ありの場合、音声終了後およそ2秒以内に回答します。',
       disclosure3: '本試験中は再読み込みや別画面への移動を避けてください。',
+      continueConsent: '参加前の確認へ',
+      continueInstructions: '課題説明へ',
       continueSound: '音声チェックへ',
+      back: '戻る',
       researcherSetup: '研究者セットアップ',
       idRequired: '匿名IDを入力するか、自動発行されたIDを使用してください。',
       consentRequired: '参加前の確認にチェックを入れてください。',
@@ -121,7 +127,7 @@
       resumeButton: 'Resume',
       discardButton: 'Start new',
       registrationTitle: 'LJT-S Registration',
-      registrationLead: 'Use headphones or earphones in a quiet place.',
+      registrationLead: 'First, confirm the participant information. Name is optional.',
       anonymousId: 'Anonymous ID',
       anonymousIdHelp: 'If left blank, an anonymous ID is generated. The normalized lowercase ID is used for ordering and key mapping.',
       optionalName: 'Name (optional)',
@@ -131,14 +137,20 @@
       resultEmailHelp: 'A result copy can be sent only when GAS submission is configured.',
       resultEmailCopy: 'Send a result copy to this email address',
       consentTitle: 'Before You Start',
+      consentLead: 'Confirm what will be recorded before continuing.',
       consentBody: 'Responses, response times, audio playback status, and device information are recorded for research-team analysis. When GAS submission is configured, data is submitted to a Google Sheet managed by the research team; retention and use follow the administrator’s approved protocol. Data is also temporarily stored on this device and can be saved as CSV at the end. Participation is voluntary; your name is optional.',
-      consentCheck: 'I have read this information and will start LJT-S.',
+      consentCheck: 'I have read this information.',
+      instructionsTitle: 'Task Instructions',
+      instructionsLead: 'Review how the task works before the sound check.',
       taskNotice: 'Listen to each English sentence and judge whether the word is used naturally in context. Responses are accepted only after the audio ends.',
       taskNoticeTouch: 'Listen to each English sentence and use the on-screen buttons to judge whether the word is used naturally in context. Responses are accepted only after the audio ends.',
       disclosure1: 'There are 4 practice trials and 40 main-test trials. The session takes about 8-10 minutes.',
       disclosure2: 'In timed mode, respond within about 2 seconds after the audio ends.',
       disclosure3: 'Do not reload the page or switch away during the main test.',
+      continueConsent: 'Continue to confirmation',
+      continueInstructions: 'Continue to instructions',
       continueSound: 'Continue to sound check',
+      back: 'Back',
       researcherSetup: 'Researcher setup',
       idRequired: 'Enter an anonymous ID or use the generated ID.',
       consentRequired: 'Please confirm the participation information before continuing.',
@@ -665,18 +677,6 @@
     const suggestedWasGenerated = draft.suggestedWasGenerated ?? !(latestPartial || recentId);
     const currentId = draft.idRaw || suggestedId;
     const resumable = getPartialSessionForParticipantId(currentId);
-    const consentMarkup = isPublicMode()
-      ? `
-        <div class="notice">
-          <strong>${escapeHtml(t('consentTitle'))}</strong>
-          <p>${escapeHtml(t('consentBody'))}</p>
-          <label class="check-row">
-            <input id="consent-check" type="checkbox"${draft.consent ? ' checked' : ''}>
-            <span>${escapeHtml(t('consentCheck'))}</span>
-          </label>
-        </div>
-      `
-      : '';
     const resumeMarkup = resumable
       ? `
         <section class="panel resume-panel">
@@ -728,18 +728,9 @@
           <input id="result-email-copy" type="checkbox"${draft.requestResultEmail ? ' checked' : ''}>
           <span>${escapeHtml(t('resultEmailCopy'))}</span>
         </label>
-        ${consentMarkup}
-        <div class="notice">
-          ${escapeHtml(hasCoarsePointer() ? t('taskNoticeTouch') : t('taskNotice'))}
-        </div>
-        <ul class="list">
-          <li>${escapeHtml(t('disclosure1'))}</li>
-          <li>${escapeHtml(t('disclosure2'))}</li>
-          <li>${escapeHtml(t('disclosure3'))}</li>
-        </ul>
         <div id="registration-error" class="notice error hidden"></div>
         <div class="actions">
-          <button class="btn" id="begin-session">${escapeHtml(t('continueSound'))}</button>
+          <button class="btn" id="continue-registration">${escapeHtml(isPublicMode() ? t('continueConsent') : t('continueInstructions'))}</button>
           ${showResearcherBack ? '<button class="btn ghost" id="back-setup">Researcher setup</button>' : ''}
           ${showResearcherLink ? `<button class="btn ghost" id="researcher-link">${escapeHtml(t('researcherSetup'))}</button>` : ''}
         </div>
@@ -754,7 +745,7 @@
         renderParticipantRegistration();
       });
     }
-    $('begin-session').addEventListener('click', () => {
+    $('continue-registration').addEventListener('click', () => {
       const name = $('participant-name').value.trim();
       const typedId = $('participant-id').value.trim();
       const idRaw = typedId || suggestedId;
@@ -770,13 +761,23 @@
         err.classList.remove('hidden');
         return;
       }
-      if (isPublicMode() && !$('consent-check')?.checked) {
-        const err = $('registration-error');
-        err.textContent = t('consentRequired');
-        err.classList.remove('hidden');
-        return;
+      const nextDraft = {
+        suggestedId,
+        suggestedWasGenerated,
+        idRaw,
+        name,
+        schoolCode,
+        classCode,
+        resultEmail,
+        requestResultEmail,
+        autoGenerated,
+        consent: draft.consent || false
+      };
+      if (isPublicMode()) {
+        renderParticipantConsent(nextDraft);
+      } else {
+        renderParticipantInstructions(nextDraft);
       }
-      startSession({ name, idRaw, schoolCode, classCode, resultEmail, requestResultEmail, autoGenerated });
     });
     if (showResearcherBack) {
       $('back-setup').addEventListener('click', renderResearcherSetup);
@@ -789,6 +790,78 @@
         window.location.href = url.toString();
       });
     }
+  }
+
+  function readConsentDraft(draft) {
+    return {
+      ...draft,
+      consent: $('consent-check')?.checked || false
+    };
+  }
+
+  function renderParticipantConsent(draft = {}) {
+    state.stage = 'consent_info';
+    app.innerHTML = `${participantTopbar()}
+      <section class="panel">
+        <h2 class="section-title">${escapeHtml(t('consentTitle'))}</h2>
+        <p class="lead">${escapeHtml(t('consentLead'))}</p>
+        <div class="notice">
+          <p>${escapeHtml(t('consentBody'))}</p>
+        </div>
+        <label class="check-row">
+          <input id="consent-check" type="checkbox"${draft.consent ? ' checked' : ''}>
+          <span>${escapeHtml(t('consentCheck'))}</span>
+        </label>
+        <div id="consent-error" class="notice error hidden"></div>
+        <div class="actions">
+          <button class="btn" id="continue-consent">${escapeHtml(t('continueInstructions'))}</button>
+          <button class="btn ghost" id="back-registration">${escapeHtml(t('back'))}</button>
+        </div>
+      </section>`;
+
+    bindLanguageToggle(() => renderParticipantConsent(readConsentDraft(draft)));
+    $('continue-consent').addEventListener('click', () => {
+      const nextDraft = readConsentDraft(draft);
+      if (!nextDraft.consent) {
+        const err = $('consent-error');
+        err.textContent = t('consentRequired');
+        err.classList.remove('hidden');
+        return;
+      }
+      renderParticipantInstructions(nextDraft);
+    });
+    $('back-registration').addEventListener('click', () => renderParticipantRegistration(readConsentDraft(draft)));
+  }
+
+  function renderParticipantInstructions(draft = {}) {
+    state.stage = 'task_instructions';
+    app.innerHTML = `${participantTopbar()}
+      <section class="panel">
+        <h2 class="section-title">${escapeHtml(t('instructionsTitle'))}</h2>
+        <p class="lead">${escapeHtml(t('instructionsLead'))}</p>
+        <div class="notice">
+          ${escapeHtml(hasCoarsePointer() ? t('taskNoticeTouch') : t('taskNotice'))}
+        </div>
+        <ul class="list">
+          <li>${escapeHtml(t('disclosure1'))}</li>
+          <li>${escapeHtml(t('disclosure2'))}</li>
+          <li>${escapeHtml(t('disclosure3'))}</li>
+        </ul>
+        <div class="actions">
+          <button class="btn" id="begin-session">${escapeHtml(t('continueSound'))}</button>
+          <button class="btn ghost" id="back-before-instructions">${escapeHtml(t('back'))}</button>
+        </div>
+      </section>`;
+
+    bindLanguageToggle(() => renderParticipantInstructions(draft));
+    $('begin-session').addEventListener('click', () => startSession(draft));
+    $('back-before-instructions').addEventListener('click', () => {
+      if (isPublicMode()) {
+        renderParticipantConsent(draft);
+      } else {
+        renderParticipantRegistration(draft);
+      }
+    });
   }
 
   function startSession(input) {
