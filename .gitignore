@@ -1,0 +1,5 @@
+.DS_Store
+.claude/
+.playwright-cli/
+audio/**/*.wav
+dist/LJT-S-online-*/
