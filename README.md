@@ -4,9 +4,27 @@ Static browser implementation of the 40-item LJT-S fixed form.
 
 ## Current Entry Points
 
-- Public participant mode: open `index.html` or the GitHub Pages root URL.
+- Public participant mode: open the GitHub Pages root URL or `index.html`.
 - Researcher setup: add `?research=1`.
 - Researcher participant URL: generated URLs use `?take=1&research=1&rc=<code>`.
+
+Published URL examples:
+
+```text
+Public participant page:
+https://ryuya-dot-com.github.io/LJT-S/
+
+Researcher setup page:
+https://ryuya-dot-com.github.io/LJT-S/?research=1
+
+Timed participant URL for researcher code lab2026:
+https://ryuya-dot-com.github.io/LJT-S/?take=1&research=1&rc=lab2026&mode=timed
+
+Untimed participant URL for researcher code lab2026:
+https://ryuya-dot-com.github.io/LJT-S/?take=1&research=1&rc=lab2026&mode=untimed
+```
+
+Replace `lab2026` with the researcher code registered in the private GAS `codes` sheet. Do not put email addresses or GAS endpoint URLs in participant links.
 
 Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `base_id`, and IRT item parameters. They also replace encoded `item_id` / `audio_file` values with neutral sequence IDs. GAS submission payloads keep full item metadata for analysis. In all modes, item metadata and answer keys are still present in client-side files because this is a static app.
 
@@ -31,6 +49,26 @@ Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `bas
 5. At completion, collect the downloaded participant CSV if GAS confirmation is unavailable. JSON backup export is also available.
 
 Server submission to Google Sheet/GAS is supported but disabled by default in `data/submission.js`. CSV download remains the safety copy. Full analysis metadata is available in the GAS Sheet payload, or from a local session started directly from researcher setup; participant-distributed `take=1` URLs download sanitized CSV/JSON.
+
+## Offline / Zip Use
+
+Recommended offline package:
+
+```text
+dist/LJT-S-online-20260701.zip
+```
+
+To run locally from the release zip:
+
+1. Download `dist/LJT-S-online-20260701.zip`.
+2. Unzip it. This creates a folder named `LJT-S-online-20260701/`.
+3. Keep the folder structure intact. Do not move `participant.html` away from the `audio/`, `data/`, `js/`, and `assets/` folders.
+4. Open `LJT-S-online-20260701/participant.html` in Chrome or Edge for participant administration.
+5. At the final screen, save and collect the CSV.
+
+If you download the whole repository from GitHub with `Code -> Download ZIP`, unzip the repository package and open `participant.html` in the repository root. The purpose-built offline package above is smaller and avoids extra development files.
+
+For offline administration, automatic Google Sheet submission is not guaranteed. Treat the downloaded CSV as the required data file.
 
 ## Timing Defaults
 
