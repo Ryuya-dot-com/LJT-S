@@ -2,7 +2,7 @@
   'use strict';
 
   const APP_VERSION = 'LJT-S-online-20260701';
-  const CODE_VERSION = 'email-delivery-20260702';
+  const CODE_VERSION = 'reference-guidance-csv-primary-20260703';
   const DEFAULTS = {
     mode: 'untimed',
     seed: 'LJT-S-20260629',
@@ -21,7 +21,7 @@
   const SUBMISSION_QUEUE_KEY = 'ljts_submission_queue_v1';
   const MAX_AUDIO_RETRIES = 3;
   const AUDIO_WATCHDOG_MS = 12000;
-  const UI_LANG_DEFAULT = 'ja';
+  const UI_LANG_DEFAULT = 'en';
   const PARTICIPANT_CSV_OMIT_KEYS = new Set([
     'correct_answer',
     'target_word',
@@ -100,22 +100,23 @@
       correctAnswer: '正答',
       audioFailed: '音声エラーのため、この試行をスキップしました。',
       completeTitle: '終了しました',
-      completeLead: '結果を確認し、必要に応じてCSVを保存してください。',
-      recorded: 'CSVはこの端末にも保存できます。',
+      completeLead: '結果を確認してください。TOEIC ListeningとCEFRは公式スコアではなく、LJT-Sに基づく参考目安です。',
+      recorded: 'CSVは信頼できる控えです。自動ダウンロードが始まらない場合は「CSVを保存」を押してください。',
       submissionNotConfigured: 'メール送信は設定されていません。CSVを保存してください。',
       submissionNoRecipient: 'メールアドレスが入力されていないため、メール送信は行いません。CSVを保存してください。',
       submissionQueued: '結果メール送信を準備しました。ネットワーク接続後に再試行できます。',
-      submissionAttempted: '結果メール送信を試行しました。CSVも保存してください。',
+      submissionAttempted: '結果メール送信を試行しました。送信上限により届かない場合があるため、CSVを保存してください。',
       submissionFailed: '結果メール送信に失敗しました。CSVを保存し、必要に応じて再試行してください。',
+      emailQuotaNotice: 'メール送信は補助機能で、1日あたり100件までの上限があります。大規模な受験では、メールアドレスを入力しても結果メールが届かないことがあります。',
       retrySubmission: 'メール送信を再試行',
       sendResultEmail: '結果メールを送信',
       rawScore: '素点',
       accuracy: '正答率',
-      toeicPrediction: 'TOEIC Listening予測',
-      cefrReference: 'CEFR参考レベル',
+      toeicPrediction: 'TOEIC Listening参考レンジ',
+      cefrReference: 'CEFR参考バンド',
       comingSoon: '準備中',
       cefrUnavailable: 'TOEIC Listening予測の係数受領後に表示します。',
-      disclaimer: '表示されるTOEIC ListeningおよびCEFRは公式スコアではなく、LJT-Sに基づく参考推定値です。',
+      disclaimer: '表示されるTOEIC ListeningレンジおよびCEFRバンドは、LJT-Sに基づく参考目安です。公式スコアではなく、クラス分け、合否、認定などの重要な判定に単独で使用しないでください。',
       downloadCsv: 'CSVを保存',
       downloadJson: 'バックアップJSONを保存',
       newSession: '新しいセッション',
@@ -184,22 +185,23 @@
       correctAnswer: 'Correct answer',
       audioFailed: 'Audio failed, so this trial was skipped.',
       completeTitle: 'Session Complete',
-      completeLead: 'Review your result and save the CSV file if needed.',
-      recorded: 'The CSV can also be saved on this device.',
+      completeLead: 'Review your result. TOEIC Listening and CEFR values are reference guides from LJT-S, not official scores.',
+      recorded: 'The CSV is the reliable copy. A download should start automatically; if it does not, use Download CSV.',
       submissionNotConfigured: 'Email delivery is not configured. Save the CSV file.',
       submissionNoRecipient: 'No email address was entered, so no email was sent. Save the CSV file.',
       submissionQueued: 'Result email is queued. Retry when network access is available.',
-      submissionAttempted: 'Result email was attempted. Save the CSV file too.',
+      submissionAttempted: 'Result email was attempted. Email may not arrive because of sending limits, so save the CSV file.',
       submissionFailed: 'Result email failed. Save the CSV and retry if needed.',
+      emailQuotaNotice: 'Email delivery is supplemental and limited to 100 messages per day. During large administrations, the result email may not arrive even if an email address was entered.',
       retrySubmission: 'Retry email',
       sendResultEmail: 'Send result email',
       rawScore: 'Raw score',
       accuracy: 'Accuracy',
-      toeicPrediction: 'TOEIC Listening prediction',
-      cefrReference: 'CEFR reference level',
+      toeicPrediction: 'TOEIC Listening reference range',
+      cefrReference: 'CEFR reference band',
       comingSoon: 'Coming soon',
       cefrUnavailable: 'Available after the TOEIC Listening conversion coefficients are added.',
-      disclaimer: 'TOEIC Listening and CEFR values shown here are reference estimates from LJT-S, not official scores.',
+      disclaimer: 'The TOEIC Listening range and CEFR band shown here are reference guides from LJT-S, not official scores. Do not use them as the sole evidence for placement, certification, pass/fail, or other high-stakes decisions.',
       downloadCsv: 'Download CSV',
       downloadJson: 'Download backup JSON',
       newSession: 'New session',
@@ -245,6 +247,7 @@
     submissionFlushPromise: null,
     autoDownloadAttempted: false
   };
+  document.documentElement.lang = state.uiLang;
 
   function $(id) {
     return document.getElementById(id);
@@ -265,6 +268,7 @@
 
   function setLanguage(lang, rerender) {
     state.uiLang = lang === 'en' ? 'en' : 'ja';
+    document.documentElement.lang = state.uiLang;
     if (typeof rerender === 'function') rerender();
   }
 
@@ -579,7 +583,7 @@
 
         <div class="notice warning">
           ${submit.enabled
-            ? 'Email delivery is configured. If participants enter a recipient email address, the sanitized result CSV is emailed at completion. CSV download remains available as a safety copy.'
+            ? 'Email delivery is configured as a supplemental channel. It is quota-limited, so participants should save the CSV at completion as the primary reliable copy.'
             : 'Email delivery is not configured yet. Participants should download the CSV at completion and send it according to the study protocol.'
           }
         </div>
@@ -1291,7 +1295,11 @@
     const summary = summarizeSession();
     const estimates = conversionSummary(summary);
     const accuracy = summary.n_main_scored ? summary.raw_score / summary.n_main_scored : NaN;
-    const resultEmailPanel = submissionSettings().enabled && !state.participant?.result_email
+    const submission = submissionSettings();
+    const emailQuotaNotice = submission.enabled
+      ? `<div class="notice warning">${escapeHtml(t('emailQuotaNotice'))}</div>`
+      : '';
+    const resultEmailPanel = submission.enabled && !state.participant?.result_email
       ? `
         <div class="notice">
           <div class="field">
@@ -1329,9 +1337,10 @@
           </div>
         </div>
         <p class="disclaimer">${escapeHtml(t('disclaimer'))}</p>
-        <div id="submission-status" class="notice ${escapeHtml(submissionNoticeClass())}">${escapeHtml(submissionStatusText())}</div>
-        ${resultEmailPanel}
         <div class="notice success">${escapeHtml(t('recorded'))}</div>
+        <div id="submission-status" class="notice ${escapeHtml(submissionNoticeClass())}">${escapeHtml(submissionStatusText())}</div>
+        ${emailQuotaNotice}
+        ${resultEmailPanel}
         <div class="actions">
           <button class="btn" id="download-csv">${escapeHtml(t('downloadCsv'))}</button>
           <button class="btn secondary" id="download-json">${escapeHtml(t('downloadJson'))}</button>
@@ -1459,14 +1468,26 @@
     });
     if (!toeic || !toeic.available) return output;
 
-    const score = Math.round(toeic.score);
-    output.toeic_listening_predicted = score;
-    output.toeic_status = 'estimated';
-    output.toeicLabel = String(score);
-    if (typeof converter.cefrFromToeicListening === 'function') {
-      const cefr = converter.cefrFromToeicListening(score);
-      output.cefr_reference = cefr || '';
-      output.cefrLabel = cefr || '';
+    const numericScore = Number(toeic.score);
+    const toeicLabel = toeic.toeicRange
+      || toeic.scoreRange
+      || (Number.isFinite(numericScore) ? String(Math.round(numericScore)) : '');
+    if (!toeicLabel) return output;
+
+    output.toeic_listening_predicted = toeicLabel;
+    output.toeic_status = toeic.status || 'estimated';
+    output.toeicLabel = String(toeicLabel);
+
+    const cefr = toeic.cefr
+      || toeic.cefrRange
+      || (
+        Number.isFinite(numericScore) && typeof converter.cefrFromToeicListening === 'function'
+          ? converter.cefrFromToeicListening(numericScore)
+          : ''
+      );
+    if (cefr) {
+      output.cefr_reference = cefr;
+      output.cefrLabel = cefr;
     }
     return output;
   }
@@ -2352,7 +2373,8 @@
     state.responseOpen = false;
     state.currentPartialKey = snapshot.storage_key || partialStorageKeyForParticipant(state.participant.id);
     state.startedFromResearcherSetup = snapshot.started_from_researcher_setup === true;
-    state.uiLang = snapshot.ui_lang === 'en' ? 'en' : UI_LANG_DEFAULT;
+    state.uiLang = snapshot.ui_lang === 'ja' ? 'ja' : UI_LANG_DEFAULT;
+    document.documentElement.lang = state.uiLang;
     state.stage = snapshot.stage || null;
     savePartialSession();
 

@@ -101,11 +101,12 @@ function resultEmailBody(session) {
     'Mode: ' + (settings.mode || ''),
     'Raw score: ' + (summary.raw_score || 0) + ' / ' + (summary.n_main_scored || ''),
     'Accuracy: ' + accuracy,
-    'TOEIC Listening prediction: ' + (summary.toeic_listening_predicted || 'Coming soon'),
-    'CEFR reference: ' + (summary.cefr_reference || 'Coming soon'),
+    'TOEIC Listening reference range: ' + (summary.toeic_listening_predicted || 'Coming soon'),
+    'CEFR reference band: ' + (summary.cefr_reference || 'Coming soon'),
     'Completed at: ' + (session.completed_at_iso || ''),
     '',
-    'TOEIC Listening and CEFR values are reference estimates from LJT-S, not official scores.',
+    'TOEIC Listening and CEFR values are reference guides from LJT-S, not official scores.',
+    'Do not use them as the sole evidence for placement, certification, pass/fail, or other high-stakes decisions.',
     'This message was generated automatically by LJT-S Online.'
   ];
   return lines.filter(String).join('\n');

@@ -38,20 +38,20 @@ Early responses during audio playback are ignored. Responses are accepted after 
 
 ## 4. Retrieve Results by Email
 
-When the result recipient email is entered, the GAS endpoint sends a CSV attachment after completion. The attached CSV is participant-safe:
+When the result recipient email is entered, the GAS endpoint attempts to send a CSV attachment after completion. The attached CSV is participant-safe:
 
 - answer keys are omitted;
 - target words and item parameters are omitted;
 - original item IDs and audio filenames are replaced with neutral sequence IDs;
 - raw score, accuracy, timing condition, participant ID, and trial-level response data are retained.
 
-Because Apps Script submission uses browser `no-cors`, the client cannot prove that the server accepted the email request. Treat the on-screen status as "email attempted"; CSV download is the operational safety copy.
+Because Apps Script submission uses browser `no-cors`, the client cannot prove that the server accepted the email request. Email delivery is also quota-limited; in this deployment context, treat the limit as 100 messages per day. Treat the on-screen status as "email attempted"; CSV download is the primary reliable copy.
 
 If you need a local full-metadata CSV for development, start a session from `?research=1` using `Start on this device`. Participant-distributed `take=1` URLs and emailed CSV attachments are sanitized.
 
 ## 5. CSV Safety Copy
 
-Participants can always download a CSV at completion. Use it when:
+Participants can always download a CSV at completion. The app attempts to start the CSV download automatically and also shows a manual `Download CSV` button. Use the downloaded CSV as the primary collection artifact, especially when:
 
 - school networks block `script.google.com`;
 - the participant is offline;
@@ -61,7 +61,7 @@ Participants can always download a CSV at completion. Use it when:
 
 ## 6. Offline Zip Administration
 
-Use `participant.html` for offline/zip administration. The participant opens the file locally, completes the task, and saves the CSV. If a GAS endpoint is configured and the network is available, email delivery may still be attempted; CSV remains the authoritative fallback.
+Use `participant.html` for offline/zip administration. The participant opens the file locally, completes the task, and saves the CSV. If a GAS endpoint is configured and the network is available, email delivery may still be attempted; CSV remains the authoritative participant-side copy.
 
 ## 7. Endpoint Check
 

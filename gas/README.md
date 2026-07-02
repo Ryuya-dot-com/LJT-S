@@ -33,10 +33,11 @@ https://script.google.com/macros/s/AKfycbxy8waMOt07zhOb_2zxaRjeKWg0-FKAclL_JBE-G
 ## Behavior
 
 - If the participant leaves the result recipient email blank, no email is sent.
-- If an email address is entered, the endpoint sends one email with a sanitized CSV attachment.
+- If an email address is entered, the endpoint attempts to send one email with a sanitized CSV attachment.
 - The attachment omits answer keys, target words, base IDs, IRT item parameters, original item IDs, and original audio filenames.
-- The body includes participant ID, optional name/school/class codes, raw score, accuracy, TOEIC/CEFR placeholders, and completion time.
+- The body includes participant ID, optional name/school/class codes, raw score, accuracy, TOEIC/CEFR reference guides, and completion time.
 - A short-lived `CacheService` key suppresses duplicate emails for the same `session_id` and recipient list.
+- Email delivery is subject to the daily sending limit for the Apps Script/Gmail account. In this deployment context, treat it as 100 messages per day; large administrations can exceed the quota, so CSV download remains the primary reliable copy.
 
 ## Security Notes
 

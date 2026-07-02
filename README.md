@@ -30,16 +30,17 @@ Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `bas
 
 ## Participant Experience
 
-- Japanese is the default participant UI; an EN toggle is available.
+- English is the default participant UI; a Japanese toggle is available.
 - Name is optional. The app generates an anonymous ID by default and normalizes it with `trim().toLowerCase()` for ordering and key mapping.
 - School/group and class codes are optional.
-- A result recipient email is optional. If entered, a sanitized result CSV is emailed at completion.
+- A result recipient email is optional. If entered, the app attempts to email a sanitized result CSV at completion, but email is supplemental and quota-limited.
 - Participants see a plain-language information notice before starting.
 - A sound-check screen plays a practice audio file and preloads all 44 audio files.
 - Practice has 4 feedback trials. The main test has 40 trials.
 - Responses are accepted only after audio playback ends. Early keypresses or button presses are ignored.
 - Timed mode uses the configured response window after the audio ends.
-- The result screen immediately shows raw score, accuracy, and placeholders for TOEIC Listening prediction and CEFR reference level.
+- The result screen immediately shows raw score, accuracy, the TOEIC Listening reference range, and the CEFR reference band.
+- The result screen presents TOEIC/CEFR feedback as reference guidance only and directs participants to save the CSV as the reliable result copy.
 
 ## Researcher Workflow
 
@@ -47,10 +48,10 @@ Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `bas
 2. Choose timed or untimed administration. The default is untimed.
 3. Keep the default constrained randomization unless the study has a specific reason to change it.
 4. Generate the participant URL and distribute it.
-5. Ask participants to enter the teacher/researcher result email address if email delivery should be used.
-6. At completion, the app attempts to email the sanitized result CSV and still offers CSV/JSON downloads as safety copies.
+5. Ask participants to enter the teacher/researcher result email address only if email delivery should be attempted.
+6. At completion, the app attempts to email the sanitized result CSV and prominently offers CSV/JSON downloads. Treat the downloaded CSV as the primary collection artifact.
 
-Email delivery through GAS is enabled in `data/submission.js`. CSV download remains the safety copy. Full analysis metadata is available only from a local session started directly from researcher setup; participant-distributed `take=1` URLs and emailed CSV attachments are sanitized.
+Email delivery through GAS is enabled in `data/submission.js`. CSV download remains the primary reliable copy. Full analysis metadata is available only from a local session started directly from researcher setup; participant-distributed `take=1` URLs and emailed CSV attachments are sanitized.
 
 ## Offline / Zip Use
 
@@ -124,19 +125,35 @@ Submission can be disabled with `?submit=0`, but it cannot be enabled or redirec
 
 Researcher codes are passed as `rc=<code>` in participant URLs only as labels written into result files. Email delivery is controlled by the recipient email field, not by a Google Sheet lookup. See `gas/README.md` and `docs/researcher-guide.md`.
 
-The browser uses fire-and-forget `no-cors` submission for Apps Script compatibility. It cannot inspect the server response, so the UI reports only that email delivery was attempted. Items are removed from the local queue after a fetch attempt resolves; only network-level failures remain for retry. CSV download is therefore always shown.
+The browser uses fire-and-forget `no-cors` submission for Apps Script compatibility. It cannot inspect the server response, so the UI reports only that email delivery was attempted. Items are removed from the local queue after a fetch attempt resolves; only network-level failures remain for retry. CSV download is therefore always shown and should be treated as the authoritative participant-side copy.
+
+Apps Script / Gmail email delivery has a daily sending limit of 100 messages for this deployment context. During large administrations, result emails may not arrive even when participants enter an email address. The participant result screen warns about this limit and directs participants to save the CSV as the reliable copy.
 
 No analytics or third-party tracking scripts are included.
 
 ## TOEIC / CEFR Conversion
 
-`data/conversion.js` contains the conversion hook. TOEIC Listening coefficients are intentionally `null` until the team receives the regression equation. Until then:
+`data/conversion.js` maps the LJT-S raw score to TOEIC Listening and CEFR reference ranges:
 
-- TOEIC Listening prediction displays `準備中` / `Coming soon`;
-- CEFR displays an unavailable message;
-- the result screen still includes the CEFR disclaimer required by the roadmap.
+| LJT-S raw score | TOEIC Listening range | CEFR reference |
+|---|---:|---|
+| 0-20 | 60-105 | A1 |
+| 21-22 | 110-185 | A2_lower |
+| 23-25 | 190-270 | A2_upper |
+| 26-29 | 275-330 | B1_lower |
+| 30-32 | 335-395 | B1_upper |
+| 33-35 | 400-440 | B2_lower |
+| 36-37 | 445-485 | B2_upper |
+| 38-40 | 490-495 | C1 |
 
-When coefficients are ready, update only `TOEIC_LISTENING_COEFFICIENTS` in `data/conversion.js`.
+The result screen, JSON payload, CSV export, and email summary store the TOEIC value as a range string such as `335-395`. These values are reference guides from LJT-S, not official TOEIC scores, official CEFR certification, or diagnostic classifications.
+
+Interpretation constraints:
+
+- Do not describe the TOEIC/CEFR outputs as official scores, official CEFR levels, certification, or placement decisions.
+- Do not use the TOEIC/CEFR outputs as the sole basis for class placement, pass/fail decisions, certification, admissions, employment screening, or other high-stakes decisions.
+- Boundary scores should be interpreted cautiously because adjacent raw-score bands can produce different reference ranges.
+- The intended use is research and educational feedback where the result is clearly framed as an approximate reference guide.
 
 ## Audio Assets
 
