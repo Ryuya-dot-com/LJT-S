@@ -24,15 +24,16 @@ Untimed participant URL for researcher code lab2026:
 https://ryuya-dot-com.github.io/LJT-S/?take=1&research=1&rc=lab2026&mode=untimed
 ```
 
-Replace `lab2026` with the researcher code registered in the private GAS `codes` sheet. Do not put email addresses or GAS endpoint URLs in participant links.
+Replace `lab2026` with the code used by your study protocol. Do not put email addresses or GAS endpoint URLs in participant links.
 
-Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `base_id`, and IRT item parameters. They also replace encoded `item_id` / `audio_file` values with neutral sequence IDs. GAS submission payloads keep full item metadata for analysis. In all modes, item metadata and answer keys are still present in client-side files because this is a static app.
+Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `base_id`, and IRT item parameters. They also replace encoded `item_id` / `audio_file` values with neutral sequence IDs. Email delivery uses the same participant-safe CSV. In all modes, item metadata and answer keys are still present in client-side files because this is a static app.
 
 ## Participant Experience
 
 - Japanese is the default participant UI; an EN toggle is available.
 - Name is optional. The app generates an anonymous ID by default and normalizes it with `trim().toLowerCase()` for ordering and key mapping.
 - School/group and class codes are optional.
+- A result recipient email is optional. If entered, a sanitized result CSV is emailed at completion.
 - Participants see a plain-language information notice before starting.
 - A sound-check screen plays a practice audio file and preloads all 44 audio files.
 - Practice has 4 feedback trials. The main test has 40 trials.
@@ -46,9 +47,10 @@ Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `bas
 2. Choose timed or untimed administration.
 3. Keep the default constrained randomization unless the study has a specific reason to change it.
 4. Generate the participant URL and distribute it.
-5. At completion, collect the downloaded participant CSV if GAS confirmation is unavailable. JSON backup export is also available.
+5. Ask participants to enter the teacher/researcher result email address if email delivery should be used.
+6. At completion, the app attempts to email the sanitized result CSV and still offers CSV/JSON downloads as safety copies.
 
-Server submission to Google Sheet/GAS is supported but disabled by default in `data/submission.js`. CSV download remains the safety copy. Full analysis metadata is available in the GAS Sheet payload, or from a local session started directly from researcher setup; participant-distributed `take=1` URLs download sanitized CSV/JSON.
+Email delivery through GAS is enabled in `data/submission.js`. CSV download remains the safety copy. Full analysis metadata is available only from a local session started directly from researcher setup; participant-distributed `take=1` URLs and emailed CSV attachments are sanitized.
 
 ## Offline / Zip Use
 
@@ -68,7 +70,7 @@ To run locally from the release zip:
 
 If you download the whole repository from GitHub with `Code -> Download ZIP`, unzip the repository package and open `participant.html` in the repository root. The purpose-built offline package above is smaller and avoids extra development files.
 
-For offline administration, automatic Google Sheet submission is not guaranteed. Treat the downloaded CSV as the required data file.
+For offline administration, email delivery is not guaranteed. Treat the downloaded CSV as the required data file.
 
 ## Timing Defaults
 
@@ -104,14 +106,14 @@ The app records:
 
 Partial sessions are saved to `localStorage` after each stage/trial using `ljts_partial_<participant_id>`. Reloading the page prefills the most recent participant ID and shows a resume panel for that ID. Partial snapshots omit answer keys, target words, original item IDs, and original audio filenames; the app reconstructs analysis rows from its fixed item table after resume. If storage is blocked, the app still runs, but resume protection is unavailable.
 
-## Google Sheet / GAS Submission
+## GAS Email Delivery
 
-The client can submit completion payloads to a Google Apps Script Web App as `text/plain` JSON. Configure it in `data/submission.js`:
+The client can submit completion payloads to a Google Apps Script Web App as `text/plain` JSON. The Apps Script endpoint generates a participant-safe CSV attachment and emails it to the recipient address entered by the participant. Configure it in `data/submission.js`:
 
 ```js
 window.LJT_SHORT_SUBMISSION = {
   enabled: true,
-  endpoint: 'https://script.google.com/macros/s/.../exec',
+  endpoint: 'https://script.google.com/macros/s/AKfycbxy8waMOt07zhOb_2zxaRjeKWg0-FKAclL_JBE-GEfar4-L3v9wqvTTln-TkwR9DrIRyw/exec',
   publicResearchCode: 'public',
   maxRetries: 5
 };
@@ -119,9 +121,9 @@ window.LJT_SHORT_SUBMISSION = {
 
 Submission can be disabled with `?submit=0`, but it cannot be enabled or redirected from the URL. Do not add endpoint URLs to participant links.
 
-Researcher codes are passed as `rc=<code>` in participant URLs and resolved only in the private GAS `codes` sheet. See `gas/README.md` and `docs/researcher-guide.md`.
+Researcher codes are passed as `rc=<code>` in participant URLs only as labels written into result files. Email delivery is controlled by the recipient email field, not by a Google Sheet lookup. See `gas/README.md` and `docs/researcher-guide.md`.
 
-The browser uses fire-and-forget `no-cors` submission for Apps Script compatibility. It cannot inspect the server response, so the UI reports only that submission was attempted. Items are removed from the local queue after a fetch attempt resolves; only network-level failures remain for retry. CSV download is therefore always shown.
+The browser uses fire-and-forget `no-cors` submission for Apps Script compatibility. It cannot inspect the server response, so the UI reports only that email delivery was attempted. Items are removed from the local queue after a fetch attempt resolves; only network-level failures remain for retry. CSV download is therefore always shown.
 
 No analytics or third-party tracking scripts are included.
 

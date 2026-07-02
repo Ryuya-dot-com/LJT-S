@@ -1,65 +1,59 @@
-# LJT-S GAS Backend
+# LJT-S GAS Email Backend
 
-This folder contains a Google Apps Script template for central Sheet collection.
+This folder contains a Google Apps Script template for email delivery of LJT-S result CSV files.
+
+The endpoint does not append rows to Google Sheets. It receives a completed session payload, generates a participant-safe CSV attachment, and sends it to the recipient email address entered in the LJT-S registration screen.
 
 ## Setup
 
-1. Create a Google Sheet owned by the research team.
-2. Open Extensions -> Apps Script.
-3. Paste `Code.gs` into the Apps Script editor.
-4. Save, then run `doGet` once from the editor and grant permissions.
-5. Deploy -> New deployment -> Web app.
-6. Execute as: the team owner account.
-7. Who has access: anyone.
-8. Copy the Web app URL.
-9. Paste the URL into `data/submission.js`:
+1. Open `script.google.com` and create a new Apps Script project.
+2. Paste `Code.gs` into the Apps Script editor.
+3. Save, then run `doGet` once from the editor and grant permissions.
+4. Deploy -> New deployment -> Web app.
+5. Execute as: the team owner account.
+6. Who has access: anyone.
+7. Copy the Web app URL.
+8. Paste the URL into `data/submission.js`:
 
 ```js
 window.LJT_SHORT_SUBMISSION = {
   enabled: true,
-  endpoint: 'https://script.google.com/macros/s/.../exec',
+  endpoint: 'https://script.google.com/macros/s/AKfycb.../exec',
   publicResearchCode: 'public',
   maxRetries: 5
 };
 ```
 
-## Researcher Codes
+## Current Deployment
 
-The script creates a private `codes` tab on first use.
+```text
+https://script.google.com/macros/s/AKfycbxy8waMOt07zhOb_2zxaRjeKWg0-FKAclL_JBE-GEfar4-L3v9wqvTTln-TkwR9DrIRyw/exec
+```
 
-Required columns:
+## Behavior
 
-- `code`: short lowercase code used in participant URLs as `rc=code`.
-- `email`: researcher email address.
-- `active`: `TRUE` to enable the code.
-- `notify_mode`: `immediate`, `none`, or a future digest mode.
-- `notes`: free text.
+- If the participant leaves the result recipient email blank, no email is sent.
+- If an email address is entered, the endpoint sends one email with a sanitized CSV attachment.
+- The attachment omits answer keys, target words, base IDs, IRT item parameters, original item IDs, and original audio filenames.
+- The body includes participant ID, optional name/school/class codes, raw score, accuracy, TOEIC/CEFR placeholders, and completion time.
+- A short-lived `CacheService` key suppresses duplicate emails for the same `session_id` and recipient list.
 
-Researcher URLs should include `?take=1&research=1&rc=<code>`. The client never stores researcher email addresses.
+## Security Notes
 
-Unknown or inactive researcher codes are written with `researcher_code_status` set to `unknown` or `inactive`, logged in the `errors` tab, and excluded from email notification. This avoids silent client-side data loss under `no-cors` while still making code mistakes auditable. Use `public` only for the public default collection path.
+The Web App URL must be callable by anonymous participants, so treat it as public. The current template does not write a Sheet, which avoids junk rows in a research workbook, but public email delivery can still consume MailApp quota if abused.
 
-## Sheet Tabs
+Optional hardening:
 
-- `sessions`: one row per completed session, including a compact summary and redacted `session_json` backup.
-- `trials`: one row per practice/main trial.
-- `codes`: private code-to-email lookup table.
-- `errors`: malformed requests or script failures.
+- Set `allowedRecipientDomains` in `Code.gs` to restrict delivery to school or institutional domains.
+- Lower `maxRecipients` if only one teacher/researcher address should be allowed.
+- Rotate the deployment URL if it is abused.
 
-`doPost` is wrapped in `LockService.getScriptLock()` so header creation and row appends do not race during simultaneous sessions. Trial rows are appended in a single `setValues` batch. `session_id` is checked separately in `sessions` and `trials`; if one side is missing after a partial write, the next retry repairs the missing side instead of returning a false duplicate. Email notification runs after the lock is released.
-
-## CORS Design
-
-The browser submits JSON as `text/plain` with `fetch(..., { mode: 'no-cors' })`. This avoids CORS preflight and works with Apps Script Web Apps, but the browser cannot read the response. The app therefore treats submission as attempted/unconfirmed and always keeps CSV download available.
-
-The `errors` tab does not store raw request bodies. It records redacted context such as `session_id`, `researcher_code`, app version, and payload keys.
+## Endpoint Check
 
 Open the Web App URL directly before data collection. A healthy deployment returns:
 
 ```json
-{"ok":true,"service":"LJT-S submission endpoint"}
+{"ok":true,"service":"LJT-S email delivery endpoint"}
 ```
 
-## Participant Result Email
-
-`allowParticipantEmailCopy` is `false` by default in `Code.gs`. Turn it on only after the team confirms the consent wording and acceptable-use policy, because public forms that send arbitrary emails can become an abuse vector.
+Then run one complete test session with your own email address and confirm that the attached CSV arrives.

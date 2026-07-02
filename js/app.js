@@ -2,7 +2,7 @@
   'use strict';
 
   const APP_VERSION = 'LJT-S-online-20260701';
-  const CODE_VERSION = 'audit-fixes-20260702b';
+  const CODE_VERSION = 'email-delivery-20260702';
   const DEFAULTS = {
     mode: 'timed',
     seed: 'LJT-S-20260629',
@@ -51,12 +51,11 @@
       optionalName: '氏名（任意）',
       schoolCode: '学校・所属コード（任意）',
       classCode: 'クラスコード（任意）',
-      resultEmail: '結果送信用メール（任意）',
-      resultEmailHelp: '実施者から案内がある場合のみ、希望者に結果コピーを送れます。',
-      resultEmailCopy: 'このメールアドレスに結果コピーを送る',
+      resultEmail: '結果送付先メール（任意）',
+      resultEmailHelp: '入力すると、終了時に結果CSVをこの宛先へ送信します。空欄の場合は送信しません。',
       consentTitle: '参加前の確認',
       consentLead: '記録される内容を確認してください。',
-      consentBody: '回答、反応時間、音声再生状況、端末情報が研究チームの分析用データとして記録されます。実施者がオンライン回収を設定している場合は研究チームへ送信されます。端末内にも一時保存され、終了時にCSVとして保存できます。参加は任意で、氏名は入力しなくても受験できます。',
+      consentBody: '回答、反応時間、音声再生状況、端末情報が結果データとして記録されます。メールアドレスを入力した場合は、終了時に結果CSVの送信先として利用します。端末内にも一時保存され、終了時にCSVとして保存できます。参加は任意で、氏名は入力しなくても受験できます。',
       consentCheck: '上記を確認しました。',
       instructionsTitle: '課題の説明',
       instructionsLead: '音声チェックの前に、課題の進め方を確認してください。',
@@ -71,6 +70,7 @@
       back: '戻る',
       researcherSetup: '研究者セットアップ',
       idRequired: '匿名IDを入力するか、自動発行されたIDを使用してください。',
+      emailInvalid: 'メールアドレスの形式を確認してください。',
       consentRequired: '参加前の確認にチェックを入れてください。',
       soundTitle: '音声チェック',
       soundLead: '下のボタンでテスト音声を再生し、はっきり聞こえることを確認してください。',
@@ -101,12 +101,14 @@
       audioFailed: '音声エラーのため、この試行をスキップしました。',
       completeTitle: '終了しました',
       completeLead: '結果を確認し、必要に応じてCSVを保存してください。',
-      recorded: '回答はこの端末に記録されました。CSVは安全網として保存できます。',
-      submissionNotConfigured: '結果ファイルを保存してください。',
-      submissionQueued: '送信準備ができました。ネットワーク接続後に再試行できます。',
-      submissionAttempted: '結果送信を試行しました。結果ファイルも保存してください。',
-      submissionFailed: '結果送信に失敗しました。結果ファイルを保存し、必要に応じて再試行してください。',
-      retrySubmission: '送信を再試行',
+      recorded: 'CSVはこの端末にも保存できます。',
+      submissionNotConfigured: 'メール送信は設定されていません。CSVを保存してください。',
+      submissionNoRecipient: 'メールアドレスが入力されていないため、メール送信は行いません。CSVを保存してください。',
+      submissionQueued: '結果メール送信を準備しました。ネットワーク接続後に再試行できます。',
+      submissionAttempted: '結果メール送信を試行しました。CSVも保存してください。',
+      submissionFailed: '結果メール送信に失敗しました。CSVを保存し、必要に応じて再試行してください。',
+      retrySubmission: 'メール送信を再試行',
+      sendResultEmail: '結果メールを送信',
       rawScore: '素点',
       accuracy: '正答率',
       toeicPrediction: 'TOEIC Listening予測',
@@ -133,12 +135,11 @@
       optionalName: 'Name (optional)',
       schoolCode: 'School / group code (optional)',
       classCode: 'Class code (optional)',
-      resultEmail: 'Result email (optional)',
-      resultEmailHelp: 'A result copy can be emailed only when the administrator has provided this option.',
-      resultEmailCopy: 'Send a result copy to this email address',
+      resultEmail: 'Result recipient email (optional)',
+      resultEmailHelp: 'If entered, the result CSV is emailed to this address after completion. Leave blank to skip email delivery.',
       consentTitle: 'Before You Start',
       consentLead: 'Confirm what will be recorded before continuing.',
-      consentBody: 'Responses, response times, audio playback status, and device information are recorded for research-team analysis. If the administrator has enabled online collection, session data is submitted to the research team. Data is also temporarily stored on this device and can be saved as CSV at the end. Participation is voluntary; your name is optional.',
+      consentBody: 'Responses, response times, audio playback status, and device information are recorded as result data. If you enter an email address, it is used as the destination for the result CSV at the end. Data is also temporarily stored on this device and can be saved as CSV. Participation is voluntary; your name is optional.',
       consentCheck: 'I have read this information.',
       instructionsTitle: 'Task Instructions',
       instructionsLead: 'Review how the task works before the sound check.',
@@ -153,6 +154,7 @@
       back: 'Back',
       researcherSetup: 'Researcher setup',
       idRequired: 'Enter an anonymous ID or use the generated ID.',
+      emailInvalid: 'Check the email address format.',
       consentRequired: 'Please confirm the participation information before continuing.',
       soundTitle: 'Sound Check',
       soundLead: 'Play the test audio below and confirm that you can hear it clearly.',
@@ -183,12 +185,14 @@
       audioFailed: 'Audio failed, so this trial was skipped.',
       completeTitle: 'Session Complete',
       completeLead: 'Review your result and save the CSV file if needed.',
-      recorded: 'Your responses have been recorded on this device. The CSV download remains available as a safety copy.',
-      submissionNotConfigured: 'Save the result file.',
-      submissionQueued: 'Submission is ready. Retry when network access is available.',
-      submissionAttempted: 'Result submission was attempted. Save the result file too.',
-      submissionFailed: 'Result submission failed. Save the result file and retry if needed.',
-      retrySubmission: 'Retry submission',
+      recorded: 'The CSV can also be saved on this device.',
+      submissionNotConfigured: 'Email delivery is not configured. Save the CSV file.',
+      submissionNoRecipient: 'No email address was entered, so no email was sent. Save the CSV file.',
+      submissionQueued: 'Result email is queued. Retry when network access is available.',
+      submissionAttempted: 'Result email was attempted. Save the CSV file too.',
+      submissionFailed: 'Result email failed. Save the CSV and retry if needed.',
+      retrySubmission: 'Retry email',
+      sendResultEmail: 'Send result email',
       rawScore: 'Raw score',
       accuracy: 'Accuracy',
       toeicPrediction: 'TOEIC Listening prediction',
@@ -388,6 +392,10 @@
       .slice(0, 40);
   }
 
+  function isValidEmailAddress(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+  }
+
   function submissionSettings() {
     const cfg = window.LJT_SHORT_SUBMISSION || {};
     const endpoint = String(cfg.endpoint || '').trim();
@@ -497,7 +505,7 @@
     app.innerHTML = `${topbar('Researcher setup')}
       <section class="panel">
         <h2 class="section-title">Administration settings</h2>
-        <p class="lead">Create a participant URL for a fixed 40-item LJT-S session. Research-mode URLs preserve analysis metadata in the CSV. Public-mode participant CSV files omit answer keys and item parameters.</p>
+        <p class="lead">Create a participant URL for a fixed 40-item LJT-S session. Participant result emails attach a sanitized CSV. Local research-mode CSV files preserve analysis metadata.</p>
 
         <div class="grid-3">
           <div class="field">
@@ -524,7 +532,7 @@
           <div class="field">
             <label for="research-code">Researcher code</label>
             <input id="research-code" type="text" value="${escapeHtml(c.researchCode || '')}" autocomplete="off" placeholder="e.g., lab2026">
-            <small>Resolved to researcher email on the private GAS codes sheet. Leave blank only for local CSV collection.</small>
+            <small>Optional label written into result files and email attachments.</small>
           </div>
         </div>
 
@@ -569,8 +577,8 @@
 
         <div class="notice warning">
           ${submit.enabled
-            ? 'GAS submission is configured. Participants should still download CSV at completion as a safety copy. Use <code>?take=1&amp;research=1&amp;rc=CODE</code> for researcher-distributed sessions.'
-            : 'Server submission is not configured yet. Participants should download the CSV at completion and send it according to the study protocol. Use <code>?take=1&amp;research=1&amp;rc=CODE</code> for researcher-distributed sessions.'
+            ? 'Email delivery is configured. If participants enter a recipient email address, the sanitized result CSV is emailed at completion. CSV download remains available as a safety copy.'
+            : 'Email delivery is not configured yet. Participants should download the CSV at completion and send it according to the study protocol.'
           }
         </div>
 
@@ -662,7 +670,7 @@
       schoolCode: $('school-code')?.value.trim() || '',
       classCode: $('class-code')?.value.trim() || '',
       resultEmail: $('result-email')?.value.trim() || '',
-      requestResultEmail: $('result-email-copy')?.checked || false,
+      requestResultEmail: Boolean($('result-email')?.value.trim()),
       consent: $('consent-check')?.checked || false
     };
   }
@@ -686,14 +694,6 @@
             <small>${escapeHtml(t('resultEmailHelp'))}</small>
           </div>
         `
-      : '';
-    const resultEmailCopyMarkup = showResultEmail
-      ? `
-        <label class="check-row result-email-row">
-          <input id="result-email-copy" type="checkbox"${draft.requestResultEmail ? ' checked' : ''}>
-          <span>${escapeHtml(t('resultEmailCopy'))}</span>
-        </label>
-      `
       : '';
     const resumeMarkup = resumable
       ? `
@@ -738,7 +738,6 @@
           </div>
           ${resultEmailMarkup}
         </div>
-        ${resultEmailCopyMarkup}
         <div id="registration-error" class="notice error hidden"></div>
         <div class="actions">
           <button class="btn" id="continue-registration">${escapeHtml(isPublicMode() ? t('continueConsent') : t('continueInstructions'))}</button>
@@ -763,12 +762,18 @@
       const schoolCode = $('school-code').value.trim();
       const classCode = $('class-code').value.trim();
       const resultEmail = $('result-email')?.value.trim() || '';
-      const requestResultEmail = $('result-email-copy')?.checked || false;
+      const requestResultEmail = Boolean(resultEmail);
       const suggestedFromInput = $('participant-id').dataset.suggestedId || suggestedId;
       const autoGenerated = suggestedWasGenerated && normalizeParticipantId(idRaw) === normalizeParticipantId(suggestedFromInput);
       if (!normalizeParticipantId(idRaw)) {
         const err = $('registration-error');
         err.textContent = t('idRequired');
+        err.classList.remove('hidden');
+        return;
+      }
+      if (resultEmail && !isValidEmailAddress(resultEmail)) {
+        const err = $('registration-error');
+        err.textContent = t('emailInvalid');
         err.classList.remove('hidden');
         return;
       }
@@ -1270,12 +1275,7 @@
     removePartialSession(partialStorageKey());
     state.submissionStatus = prepareSubmission();
     renderResults();
-    attemptFlushSubmissionQueue().then(status => {
-      if (status) {
-        state.submissionStatus = status;
-        updateSubmissionStatusUi();
-      }
-    });
+    flushQueuedSubmission();
     window.setTimeout(() => {
       if (!state.autoDownloadAttempted) {
         state.autoDownloadAttempted = true;
@@ -1289,6 +1289,21 @@
     const summary = summarizeSession();
     const estimates = conversionSummary(summary);
     const accuracy = summary.n_main_scored ? summary.raw_score / summary.n_main_scored : NaN;
+    const resultEmailPanel = submissionSettings().enabled && !state.participant?.result_email
+      ? `
+        <div class="notice">
+          <div class="field">
+            <label for="result-email-final">${escapeHtml(t('resultEmail'))}</label>
+            <input id="result-email-final" type="email" autocomplete="email">
+            <small>${escapeHtml(t('resultEmailHelp'))}</small>
+          </div>
+          <div id="result-email-error" class="notice error hidden"></div>
+          <div class="actions">
+            <button class="btn secondary" id="send-result-email">${escapeHtml(t('sendResultEmail'))}</button>
+          </div>
+        </div>
+      `
+      : '';
     app.innerHTML = `${participantTopbar()}
       <section class="panel">
         <h2 class="section-title">${escapeHtml(t('completeTitle'))}</h2>
@@ -1313,6 +1328,7 @@
         </div>
         <p class="disclaimer">${escapeHtml(t('disclaimer'))}</p>
         <div id="submission-status" class="notice ${escapeHtml(submissionNoticeClass())}">${escapeHtml(submissionStatusText())}</div>
+        ${resultEmailPanel}
         <div class="notice success">${escapeHtml(t('recorded'))}</div>
         <div class="actions">
           <button class="btn" id="download-csv">${escapeHtml(t('downloadCsv'))}</button>
@@ -1324,15 +1340,29 @@
     bindLanguageToggle(renderResults);
     $('download-csv').addEventListener('click', downloadCsv);
     $('download-json').addEventListener('click', downloadJson);
+    const sendResultEmail = $('send-result-email');
+    if (sendResultEmail) {
+      sendResultEmail.addEventListener('click', () => {
+        const email = $('result-email-final')?.value.trim() || '';
+        const err = $('result-email-error');
+        if (!email || !isValidEmailAddress(email)) {
+          err.textContent = t('emailInvalid');
+          err.classList.remove('hidden');
+          return;
+        }
+        err.classList.add('hidden');
+        state.participant.result_email = email;
+        state.participant.request_result_email = 1;
+        state.submissionStatus = prepareSubmission();
+        updateSubmissionStatusUi();
+        sendResultEmail.disabled = true;
+        flushQueuedSubmission();
+      });
+    }
     $('retry-submit').addEventListener('click', () => {
       state.submissionStatus = { state: 'queued' };
       updateSubmissionStatusUi();
-      attemptFlushSubmissionQueue().then(status => {
-        if (status) {
-          state.submissionStatus = status;
-          updateSubmissionStatusUi();
-        }
-      });
+      flushQueuedSubmission();
     });
     if (showResearcherControls) {
       $('new-session').addEventListener('click', () => {
@@ -1346,6 +1376,7 @@
     const status = state.submissionStatus || { state: 'not_configured' };
     if (status.state === 'attempted') return t('submissionAttempted');
     if (status.state === 'failed') return t('submissionFailed');
+    if (status.state === 'no_recipient') return t('submissionNoRecipient');
     if (status.state === 'queued') return t('submissionQueued');
     return t('submissionNotConfigured');
   }
@@ -1354,6 +1385,7 @@
     const status = state.submissionStatus || { state: 'not_configured' };
     if (status.state === 'attempted') return 'warning';
     if (status.state === 'failed') return 'error';
+    if (status.state === 'no_recipient') return 'warning';
     if (status.state === 'queued') return 'warning';
     return 'warning';
   }
@@ -1376,6 +1408,16 @@
     if (retry) {
       retry.classList.toggle('hidden', !submissionCanRetry());
     }
+  }
+
+  function flushQueuedSubmission() {
+    if (state.submissionStatus?.state !== 'queued') return;
+    attemptFlushSubmissionQueue().then(status => {
+      if (status) {
+        state.submissionStatus = status;
+        updateSubmissionStatusUi();
+      }
+    });
   }
 
   function summarizeSession() {
@@ -1468,12 +1510,13 @@
   function prepareSubmission() {
     const settings = submissionSettings();
     if (!settings.enabled) return { state: 'not_configured' };
+    if (!state.participant?.result_email) return { state: 'no_recipient' };
     const payload = {
       schema_version: 1,
       submitted_from_app_at_iso: new Date().toISOString(),
       researcher_code: normalizeResearchCode(state.config.researchCode) || settings.publicResearchCode,
       app_url: window.location.href,
-      session: sessionPayload()
+      session: participantSafeSessionPayload(sessionPayload(), { preserveResultEmail: true })
     };
     const queued = enqueueSubmission(payload);
     return queued ? { state: 'queued' } : { state: 'failed' };
@@ -1669,10 +1712,12 @@
     return output;
   }
 
-  function participantSafeSessionPayload(payload) {
+  function participantSafeSessionPayload(payload, options = {}) {
     const safe = JSON.parse(JSON.stringify(payload));
     if (safe.participant) {
-      safe.participant.result_email = safe.participant.result_email ? '[redacted]' : '';
+      if (!options.preserveResultEmail) {
+        safe.participant.result_email = safe.participant.result_email ? '[redacted]' : '';
+      }
     }
     safe.practice_log = (safe.practice_log || []).map(stripParticipantCsvMetadata);
     safe.trial_log = (safe.trial_log || []).map(stripParticipantCsvMetadata);

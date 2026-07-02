@@ -18,7 +18,8 @@ These instructions are for researchers who need to run LJT-S on desktop computer
 3. Read the information screen and continue to the sound check.
 4. Complete 4 practice trials and 40 main-test trials.
 5. Save the CSV on the final screen.
-6. Submit the CSV according to the researcher's instructions.
+6. If network access is available and a result recipient email was entered, email delivery is also attempted.
+7. Submit the CSV according to the researcher's instructions.
 
 ## Researcher Collection
 
@@ -29,6 +30,6 @@ These instructions are for researchers who need to run LJT-S on desktop computer
 
 ## Notes
 
-- Offline administration does not guarantee automatic Google Sheet submission.
-- If network access is available and `data/submission.js` contains a GAS URL, automatic submission may also be attempted.
+- Offline administration does not guarantee email delivery.
+- If network access is available and `data/submission.js` contains a GAS URL, result CSV email delivery may also be attempted.
 - Always collect the CSV.
