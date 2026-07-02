@@ -4,7 +4,7 @@
   const APP_VERSION = 'LJT-S-online-20260701';
   const CODE_VERSION = 'email-delivery-20260702';
   const DEFAULTS = {
-    mode: 'timed',
+    mode: 'untimed',
     seed: 'LJT-S-20260629',
     keymap: 'counterbalanced',
     responseWindowHit: 1600,
@@ -375,7 +375,9 @@
   }
 
   function normalizeMode(value) {
-    return String(value || '').toLowerCase() === 'untimed' ? 'untimed' : 'timed';
+    const v = String(value || '').toLowerCase();
+    if (v === 'timed' || v === 'untimed') return v;
+    return DEFAULTS.mode;
   }
 
   function normalizeKeymap(value) {

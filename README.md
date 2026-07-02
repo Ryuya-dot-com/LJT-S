@@ -44,7 +44,7 @@ Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `bas
 ## Researcher Workflow
 
 1. Open `index.html?research=1` or the published URL with `?research=1`.
-2. Choose timed or untimed administration.
+2. Choose timed or untimed administration. The default is untimed.
 3. Keep the default constrained randomization unless the study has a specific reason to change it.
 4. Generate the participant URL and distribute it.
 5. Ask participants to enter the teacher/researcher result email address if email delivery should be used.
@@ -74,11 +74,12 @@ For offline administration, email delivery is not guaranteed. Treat the download
 
 ## Timing Defaults
 
+- Default mode: untimed.
+- Untimed condition: no forced response deadline; response time is still recorded.
 - Appropriate items: 1600 ms response window.
 - Inappropriate items: 2000 ms response window.
-- Untimed condition: no forced response deadline; response time is still recorded.
 
-These defaults follow the existing LJT-CAT timed administration logic.
+The response-window values apply only when timed mode is selected.
 
 ## Item Ordering
 
