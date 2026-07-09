@@ -3,3 +3,4 @@
 .playwright-cli/
 audio/**/*.wav
 dist/LJT-S-online-*/
+dist/LJT-S-offline-*/

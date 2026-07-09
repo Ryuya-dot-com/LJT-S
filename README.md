@@ -39,7 +39,8 @@ Participant-facing CSV/JSON downloads omit `correct_answer`, `target_word`, `bas
 - Practice has 4 feedback trials. The main test has 40 trials.
 - Responses are accepted only after audio playback ends. Early keypresses or button presses are ignored.
 - Timed mode uses the configured response window after the audio ends.
-- The result screen immediately shows raw score, accuracy, the TOEIC Listening reference range, and the CEFR reference band.
+- The result screen immediately shows raw score, accuracy, correct responses by item type, the TOEIC Listening reference range, and the CEFR reference band.
+- TOEIC/CEFR reference values are withheld when fewer than all 40 main-test responses are valid; incomplete scores are not prorated.
 - The result screen presents TOEIC/CEFR feedback as reference guidance only and directs participants to save the CSV as the reliable result copy.
 
 ## Researcher Workflow
@@ -58,20 +59,20 @@ Email delivery through GAS is enabled in `data/submission.js`. CSV download rema
 Recommended offline package:
 
 ```text
-dist/LJT-S-online-20260701.zip
+dist/LJT-S-offline-20260710.zip
 ```
 
 To run locally from the release zip:
 
-1. Download `dist/LJT-S-online-20260701.zip`.
-2. Unzip it. This creates a folder named `LJT-S-online-20260701/`.
-3. Keep the folder structure intact. Do not move `participant.html` away from the `audio/`, `data/`, `js/`, and `assets/` folders.
-4. Open `LJT-S-online-20260701/participant.html` in Chrome or Edge for participant administration.
+1. Download `dist/LJT-S-offline-20260710.zip`.
+2. Unzip it. This creates a folder named `LJT-S-offline-20260710/`.
+3. Keep `START_HERE.html` beside the `audio/` folder.
+4. Open `START_HERE.html` in Chrome or Edge.
 5. At the final screen, save and collect the CSV.
 
-If you download the whole repository from GitHub with `Code -> Download ZIP`, unzip the repository package and open `participant.html` in the repository root. The purpose-built offline package above is smaller and avoids extra development files.
+The offline package contains one self-contained HTML file plus the 44 required `.m4a` files. Email submission is disabled in this package. Do not use GitHub's whole-repository download for routine offline administration.
 
-For offline administration, email delivery is not guaranteed. Treat the downloaded CSV as the required data file.
+The existing GitHub Pages URL and query parameters are unchanged. The offline package is a separate release artifact and does not replace or redirect the hosted page.
 
 ## Timing Defaults
 
@@ -106,7 +107,7 @@ The app records:
 - focus loss / visibility-hidden events during audio playback and response windows, with timed-trial invalidation flags;
 - user agent, viewport/screen size, pointer type, iframe status, and protocol in session JSON and CSV summary columns.
 
-Partial sessions are saved to `localStorage` after each stage/trial using `ljts_partial_<participant_id>`. Reloading the page prefills the most recent participant ID and shows a resume panel for that ID. Partial snapshots omit answer keys, target words, original item IDs, and original audio filenames; the app reconstructs analysis rows from its fixed item table after resume. If storage is blocked, the app still runs, but resume protection is unavailable.
+Sessions are saved to `localStorage` after each stage/trial using `ljts_partial_<participant_id>`. A completed result remains recoverable on that device for up to 24 hours so a blocked or missed download can be repeated. A saved session is shown explicitly as a resume/result panel; a previous ID is no longer silently reused without a saved session. The result screen provides a control to delete the current session and its queued submission data. Snapshots omit answer keys, target words, original item IDs, and original audio filenames. If storage is blocked, the app still runs, but resume and result-recovery protection are unavailable.
 
 ## GAS Email Delivery
 
@@ -123,7 +124,7 @@ window.LJT_SHORT_SUBMISSION = {
 
 Submission can be disabled with `?submit=0`, but it cannot be enabled or redirected from the URL. Do not add endpoint URLs to participant links.
 
-Researcher codes are passed as `rc=<code>` in participant URLs only as labels written into result files. Email delivery is controlled by the recipient email field, not by a Google Sheet lookup. See `gas/README.md` and `docs/researcher-guide.md`.
+The currently deployed endpoint keeps operating until its Apps Script owner publishes a new version. The source template in `gas/Code.gs` now defaults to server-side research-code routing for the next deployment; configure its Script Properties before deployment. Updating the existing GAS deployment preserves the same `/exec` URL and does not change the GitHub Pages link. See `gas/README.md` and `docs/researcher-guide.md`.
 
 The browser uses fire-and-forget `no-cors` submission for Apps Script compatibility. It cannot inspect the server response, so the UI reports only that email delivery was attempted. Items are removed from the local queue after a fetch attempt resolves; only network-level failures remain for retry. CSV download is therefore always shown and should be treated as the authoritative participant-side copy.
 
@@ -148,6 +149,8 @@ No analytics or third-party tracking scripts are included.
 
 The result screen, JSON payload, CSV export, and email summary store the TOEIC value as a range string such as `335-395`. These values are reference guides from LJT-S, not official TOEIC scores, official CEFR certification, or diagnostic classifications.
 
+Conversion is performed only when all 40 main-test responses are valid for scoring. Audio errors, focus invalidation, abandonment, or other technical exclusions suppress TOEIC/CEFR output rather than converting or prorating a partial score.
+
 Interpretation constraints:
 
 - Do not describe the TOEIC/CEFR outputs as official scores, official CEFR levels, certification, or placement decisions.
@@ -163,7 +166,7 @@ The app references mono AAC `.m4a` files generated from the WAV originals. Regen
 scripts/convert-audio.sh 80k
 ```
 
-The WAV originals are currently left in `audio/` for traceability. Before publishing a lean GitHub Pages release, move the WAV masters to Dropbox/OSF and keep only `.m4a` files in the web bundle.
+WAV masters are kept outside the published repository. The web and offline bundles contain only the 44 referenced `.m4a` files.
 
 ## QA and Release Helpers
 
@@ -175,13 +178,14 @@ scripts/randomization-check.js 500
 
 Outputs are written to `qa/randomization_simulation_summary.json` and `qa/randomization_simulation_500.csv`.
 
-Build an offline/web release zip without WAV masters:
+Build and verify the single-HTML offline package:
 
 ```bash
-scripts/build-release-zip.sh
+scripts/build-offline-package.sh
+scripts/verify-offline-package.sh +  dist/LJT-S-offline-20260710 +  dist/LJT-S-offline-20260710.zip
 ```
 
-The current output is `dist/LJT-S-online-20260701.zip`.
+The current output is `dist/LJT-S-offline-20260710.zip`. The legacy web-layout archive can still be regenerated with `scripts/build-release-zip.sh` so its existing repository link remains valid.
 
 ## Files
 
@@ -198,4 +202,6 @@ The current output is `dist/LJT-S-online-20260701.zip`.
 - `assets/styles.css`: app styling.
 - `scripts/convert-audio.sh`: WAV to `.m4a` conversion helper.
 - `scripts/randomization-check.js`: reproducible constrained-randomization simulation.
+- `scripts/build-offline-package.sh`: builds the local-only single-HTML package.
+- `scripts/verify-offline-package.sh`: verifies package structure, embedded assets, and audio integrity.
 - `scripts/build-release-zip.sh`: release zip builder.

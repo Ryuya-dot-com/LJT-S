@@ -2,7 +2,9 @@
   'use strict';
 
   const APP_VERSION = 'LJT-S-online-20260701';
-  const CODE_VERSION = 'reference-guidance-csv-primary-20260703';
+  const CODE_VERSION = 'safety-offline-package-20260710';
+  const CONSENT_VERSION = 'ljts-participant-information-20260710';
+  const PARTIAL_STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
   const DEFAULTS = {
     mode: 'untimed',
     seed: 'LJT-S-20260629',
@@ -44,6 +46,11 @@
       resumeLead: 'この端末に未完了のセッションが保存されています。続きから再開できます。',
       resumeButton: '続きから再開',
       discardButton: '新しく始める',
+      savedResultTitle: '保存済みの結果があります',
+      savedResultLead: 'この端末に直前の結果が一時保存されています。結果画面を開いて再保存できます。',
+      viewSavedResult: '結果を開く',
+      discardSavedResult: '保存結果を削除して新しく始める',
+      confirmDiscard: 'この端末に保存されたセッションを削除して、新しく始めますか？',
       registrationTitle: 'LJT-S 受験情報',
       registrationLead: 'はじめに受験者情報を確認します。氏名は入力しなくても受験できます。',
       anonymousId: '匿名ID',
@@ -114,11 +121,19 @@
       accuracy: '正答率',
       toeicPrediction: 'TOEIC Listening参考レンジ',
       cefrReference: 'CEFR参考バンド',
+      appropriateCorrect: '適切な用法を正しく受け入れた数',
+      inappropriateCorrect: '不適切な用法を正しく退けた数',
+      excludedTrials: '技術的除外',
+      incompleteResult: '有効な本試験回答が40問未満のため、TOEIC ListeningおよびCEFRの参考換算は表示しません。得点の按分補正も行っていません。',
+      incompleteReference: '不完全なため表示なし',
       comingSoon: '準備中',
       cefrUnavailable: 'TOEIC Listening予測の係数受領後に表示します。',
       disclaimer: '表示されるTOEIC ListeningレンジおよびCEFRバンドは、LJT-Sに基づく参考目安です。公式スコアではなく、クラス分け、合否、認定などの重要な判定に単独で使用しないでください。',
       downloadCsv: 'CSVを保存',
       downloadJson: 'バックアップJSONを保存',
+      clearDeviceData: 'この端末の保存データを削除',
+      confirmClearDeviceData: '再ダウンロード用の一時保存と、このセッションの未送信メールデータを端末から削除しますか？',
+      deviceDataCleared: '端末の保存データを削除しました',
       newSession: '新しいセッション',
       progressPractice: '練習',
       progressMain: '本試験'
@@ -129,6 +144,11 @@
       resumeLead: 'This device has an unfinished session. You can continue from the last recorded trial.',
       resumeButton: 'Resume',
       discardButton: 'Start new',
+      savedResultTitle: 'Saved result found',
+      savedResultLead: 'The most recent result is temporarily stored on this device. Open it to download the result again.',
+      viewSavedResult: 'Open saved result',
+      discardSavedResult: 'Delete saved result and start new',
+      confirmDiscard: 'Delete the session stored on this device and start a new session?',
       registrationTitle: 'LJT-S Registration',
       registrationLead: 'First, confirm the participant information. Name is optional.',
       anonymousId: 'Anonymous ID',
@@ -199,11 +219,19 @@
       accuracy: 'Accuracy',
       toeicPrediction: 'TOEIC Listening reference range',
       cefrReference: 'CEFR reference band',
+      appropriateCorrect: 'Appropriate uses correctly accepted',
+      inappropriateCorrect: 'Inappropriate uses correctly rejected',
+      excludedTrials: 'Technical exclusions',
+      incompleteResult: 'TOEIC Listening and CEFR reference values are not shown because fewer than 40 main-test responses were valid. The score has not been prorated.',
+      incompleteReference: 'Not shown: incomplete form',
       comingSoon: 'Coming soon',
       cefrUnavailable: 'Available after the TOEIC Listening conversion coefficients are added.',
       disclaimer: 'The TOEIC Listening range and CEFR band shown here are reference guides from LJT-S, not official scores. Do not use them as the sole evidence for placement, certification, pass/fail, or other high-stakes decisions.',
       downloadCsv: 'Download CSV',
       downloadJson: 'Download backup JSON',
+      clearDeviceData: 'Clear saved data on this device',
+      confirmClearDeviceData: 'Delete the temporary result copy and any unsent email data for this session from this device?',
+      deviceDataCleared: 'Saved device data cleared',
       newSession: 'New session',
       progressPractice: 'Practice',
       progressMain: 'Main test'
@@ -305,6 +333,10 @@
 
   function isPublicMode() {
     return !isResearchMode();
+  }
+
+  function requiresParticipantConfirmation() {
+    return isPublicMode() || isParticipantTakeUrl() || isParticipantEntryFile();
   }
 
   function hasCoarsePointer() {
@@ -686,11 +718,15 @@
     const showResearcherBack = state.startedFromResearcherSetup;
     const showResearcherLink = !isParticipantEntryFile() && !isParticipantTakeUrl() && !isResearchMode();
     const latestPartial = draft.idRaw ? null : getLatestPartialSession();
-    const recentId = draft.idRaw ? '' : readRecentParticipantId();
-    const suggestedId = draft.suggestedId || latestPartial?.participant?.id_raw || recentId || createAnonymousParticipantId();
-    const suggestedWasGenerated = draft.suggestedWasGenerated ?? !(latestPartial || recentId);
+    const suggestedId = draft.suggestedId || latestPartial?.participant?.id_raw || createAnonymousParticipantId();
+    const suggestedWasGenerated = draft.suggestedWasGenerated ?? !latestPartial;
     const currentId = draft.idRaw || suggestedId;
     const resumable = getPartialSessionForParticipantId(currentId);
+    const savedResultAvailable = resumable?.stage === 'complete';
+    const resumeTitleKey = savedResultAvailable ? 'savedResultTitle' : 'resumeTitle';
+    const resumeLeadKey = savedResultAvailable ? 'savedResultLead' : 'resumeLead';
+    const resumeButtonKey = savedResultAvailable ? 'viewSavedResult' : 'resumeButton';
+    const discardButtonKey = savedResultAvailable ? 'discardSavedResult' : 'discardButton';
     const showResultEmail = submissionSettings().enabled;
     const resultEmailMarkup = showResultEmail
       ? `
@@ -704,16 +740,16 @@
     const resumeMarkup = resumable
       ? `
         <section class="panel resume-panel">
-          <h2 class="section-title">${escapeHtml(t('resumeTitle'))}</h2>
-          <p class="lead">${escapeHtml(t('resumeLead'))}</p>
+          <h2 class="section-title">${escapeHtml(t(resumeTitleKey))}</h2>
+          <p class="lead">${escapeHtml(t(resumeLeadKey))}</p>
           <table class="summary-table">
             <tr><th>ID</th><td>${escapeHtml(resumable.participant?.id_raw || resumable.participant?.id || '')}</td></tr>
             <tr><th>Saved</th><td>${escapeHtml(resumable.saved_at_iso || '')}</td></tr>
             <tr><th>Progress</th><td>${escapeHtml(`${resumable.practice_log?.length || 0}/${PRACTICE_ITEMS.length} practice, ${resumable.trial_log?.length || 0}/${ITEMS.length} main`)}</td></tr>
           </table>
           <div class="actions">
-            <button class="btn" id="resume-session">${escapeHtml(t('resumeButton'))}</button>
-            <button class="btn secondary" id="discard-resume">${escapeHtml(t('discardButton'))}</button>
+            <button class="btn" id="resume-session">${escapeHtml(t(resumeButtonKey))}</button>
+            <button class="btn secondary" id="discard-resume">${escapeHtml(t(discardButtonKey))}</button>
           </div>
         </section>
       `
@@ -746,7 +782,7 @@
         </div>
         <div id="registration-error" class="notice error hidden"></div>
         <div class="actions">
-          <button class="btn" id="continue-registration">${escapeHtml(isPublicMode() ? t('continueConsent') : t('continueInstructions'))}</button>
+          <button class="btn" id="continue-registration">${escapeHtml(requiresParticipantConfirmation() ? t('continueConsent') : t('continueInstructions'))}</button>
           ${showResearcherBack ? '<button class="btn ghost" id="back-setup">Researcher setup</button>' : ''}
           ${showResearcherLink ? `<button class="btn ghost" id="researcher-link">${escapeHtml(t('researcherSetup'))}</button>` : ''}
         </div>
@@ -757,7 +793,9 @@
     if (resumable) {
       $('resume-session').addEventListener('click', () => restorePartialSession(resumable));
       $('discard-resume').addEventListener('click', () => {
+        if (!window.confirm(t('confirmDiscard'))) return;
         removePartialSession(resumable.storage_key);
+        clearRecentParticipantId();
         renderParticipantRegistration();
       });
     }
@@ -795,7 +833,7 @@
         autoGenerated,
         consent: draft.consent || false
       };
-      if (isPublicMode()) {
+      if (requiresParticipantConfirmation()) {
         renderParticipantConsent(nextDraft);
       } else {
         renderParticipantInstructions(nextDraft);
@@ -850,6 +888,8 @@
         err.classList.remove('hidden');
         return;
       }
+      nextDraft.consentVersion = CONSENT_VERSION;
+      nextDraft.consentedAtIso = new Date().toISOString();
       renderParticipantInstructions(nextDraft);
     });
     $('back-registration').addEventListener('click', () => renderParticipantRegistration(readConsentDraft(draft)));
@@ -878,7 +918,7 @@
     bindLanguageToggle(() => renderParticipantInstructions(draft));
     $('begin-session').addEventListener('click', () => startSession(draft));
     $('back-before-instructions').addEventListener('click', () => {
-      if (isPublicMode()) {
+      if (requiresParticipantConfirmation()) {
         renderParticipantConsent(draft);
       } else {
         renderParticipantRegistration(draft);
@@ -897,7 +937,9 @@
       class_code: input.classCode || '',
       result_email: input.requestResultEmail ? input.resultEmail || '' : '',
       request_result_email: input.requestResultEmail ? 1 : 0,
-      anonymous_id_generated: input.autoGenerated ? 1 : 0
+      anonymous_id_generated: input.autoGenerated ? 1 : 0,
+      consent_version: input.consentVersion || '',
+      consented_at_iso: input.consentedAtIso || ''
     };
     state.sessionId = createSessionId();
     state.startedAtIso = new Date().toISOString();
@@ -1278,8 +1320,8 @@
   function completeSession() {
     state.completedAtIso = new Date().toISOString();
     state.stage = 'complete';
-    removePartialSession(partialStorageKey());
     state.submissionStatus = prepareSubmission();
+    savePartialSession();
     renderResults();
     flushQueuedSubmission();
     window.setTimeout(() => {
@@ -1296,6 +1338,9 @@
     const estimates = conversionSummary(summary);
     const accuracy = summary.n_main_scored ? summary.raw_score / summary.n_main_scored : NaN;
     const submission = submissionSettings();
+    const incompleteResultNotice = summary.n_main_scored === ITEMS.length && summary.n_main_excluded === 0
+      ? ''
+      : `<div class="notice warning">${escapeHtml(t('incompleteResult'))}</div>`;
     const emailQuotaNotice = submission.enabled
       ? `<div class="notice warning">${escapeHtml(t('emailQuotaNotice'))}</div>`
       : '';
@@ -1328,6 +1373,20 @@
             <strong>${escapeHtml(formatPercent(accuracy))}</strong>
           </div>
           <div class="result-card">
+            <span>${escapeHtml(t('appropriateCorrect'))}</span>
+            <strong>${summary.appropriate_score} / ${summary.n_appropriate}</strong>
+          </div>
+          <div class="result-card">
+            <span>${escapeHtml(t('inappropriateCorrect'))}</span>
+            <strong>${summary.inappropriate_score} / ${summary.n_inappropriate}</strong>
+          </div>
+          ${summary.n_main_excluded > 0 ? `
+            <div class="result-card">
+              <span>${escapeHtml(t('excludedTrials'))}</span>
+              <strong>${summary.n_main_excluded}</strong>
+            </div>
+          ` : ''}
+          <div class="result-card">
             <span>${escapeHtml(t('toeicPrediction'))}</span>
             <strong>${escapeHtml(estimates.toeicLabel)}</strong>
           </div>
@@ -1336,6 +1395,7 @@
             <strong>${escapeHtml(estimates.cefrLabel)}</strong>
           </div>
         </div>
+        ${incompleteResultNotice}
         <p class="disclaimer">${escapeHtml(t('disclaimer'))}</p>
         <div class="notice success">${escapeHtml(t('recorded'))}</div>
         <div id="submission-status" class="notice ${escapeHtml(submissionNoticeClass())}">${escapeHtml(submissionStatusText())}</div>
@@ -1345,12 +1405,20 @@
           <button class="btn" id="download-csv">${escapeHtml(t('downloadCsv'))}</button>
           <button class="btn secondary" id="download-json">${escapeHtml(t('downloadJson'))}</button>
           <button class="btn secondary${submissionCanRetry() ? '' : ' hidden'}" id="retry-submit">${escapeHtml(t('retrySubmission'))}</button>
+          <button class="btn ghost" id="clear-device-data">${escapeHtml(t('clearDeviceData'))}</button>
           ${showResearcherControls ? `<button class="btn ghost" id="new-session">${escapeHtml(t('newSession'))}</button>` : ''}
         </div>
       </section>`;
     bindLanguageToggle(renderResults);
     $('download-csv').addEventListener('click', downloadCsv);
     $('download-json').addEventListener('click', downloadJson);
+    $('clear-device-data').addEventListener('click', () => {
+      if (!window.confirm(t('confirmClearDeviceData'))) return;
+      clearCurrentSessionData();
+      const button = $('clear-device-data');
+      button.textContent = t('deviceDataCleared');
+      button.disabled = true;
+    });
     const sendResultEmail = $('send-result-email');
     if (sendResultEmail) {
       sendResultEmail.addEventListener('click', () => {
@@ -1377,6 +1445,7 @@
     });
     if (showResearcherControls) {
       $('new-session').addEventListener('click', () => {
+        clearCurrentSessionData();
         state.autoDownloadAttempted = false;
         renderParticipantRegistration();
       });
@@ -1426,6 +1495,7 @@
     attemptFlushSubmissionQueue().then(status => {
       if (status) {
         state.submissionStatus = status;
+        if (state.stage === 'complete') savePartialSession();
         updateSubmissionStatusUi();
       }
     });
@@ -1434,6 +1504,8 @@
   function summarizeSession() {
     const main = state.trialLog;
     const scoredMain = main.filter(row => Number(row.valid_for_scoring) !== 0);
+    const administeredAppropriate = main.filter(row => row.correct_answer === 'appropriate');
+    const administeredInappropriate = main.filter(row => row.correct_answer === 'inappropriate');
     const appRows = scoredMain.filter(row => row.correct_answer === 'appropriate');
     const inappRows = scoredMain.filter(row => row.correct_answer === 'inappropriate');
     return {
@@ -1443,8 +1515,12 @@
       n_main_excluded: main.length - scoredMain.length,
       raw_score: sum(scoredMain, 'correct'),
       n_appropriate: appRows.length,
+      n_appropriate_administered: administeredAppropriate.length,
+      n_appropriate_excluded: administeredAppropriate.length - appRows.length,
       appropriate_score: sum(appRows, 'correct'),
       n_inappropriate: inappRows.length,
+      n_inappropriate_administered: administeredInappropriate.length,
+      n_inappropriate_excluded: administeredInappropriate.length - inappRows.length,
       inappropriate_score: sum(inappRows, 'correct'),
       timeouts: main.filter(row => Number(row.timed_out) === 1).length
     };
@@ -1459,6 +1535,16 @@
       toeicLabel: t('comingSoon'),
       cefrLabel: t('cefrUnavailable')
     };
+
+    const completeForm = summary.n_main === ITEMS.length
+      && summary.n_main_scored === ITEMS.length
+      && summary.n_main_excluded === 0;
+    if (!completeForm) {
+      output.toeic_status = 'incomplete_form';
+      output.toeicLabel = t('incompleteReference');
+      output.cefrLabel = t('incompleteReference');
+      return output;
+    }
 
     if (!converter || typeof converter.estimateToeicListening !== 'function') return output;
     const toeic = converter.estimateToeicListening({
@@ -1513,6 +1599,11 @@
       participant: state.participant,
       session_id: state.sessionId,
       started_at_iso: state.startedAtIso,
+      consent: {
+        version: state.participant?.consent_version || '',
+        confirmed_at_iso: state.participant?.consented_at_iso || '',
+        confirmed_in_app: state.participant?.consent_version ? 1 : 0
+      },
       research_mode: isResearchMode(),
       researcher_code: normalizeResearchCode(state.config.researchCode) || '',
       source_url: window.location.href,
@@ -1669,13 +1760,22 @@
       main_n_items: summary.n_main_scored,
       main_n_administered: summary.n_main,
       main_n_excluded: summary.n_main_excluded,
+      scoring_status: summary.n_main_scored === ITEMS.length && summary.n_main_excluded === 0 ? 'complete' : 'incomplete_form',
       main_accuracy: summary.n_main_scored ? round(summary.raw_score / summary.n_main_scored, 4) : '',
       appropriate_score: summary.appropriate_score,
+      appropriate_items_scored: summary.n_appropriate,
+      appropriate_items_administered: summary.n_appropriate_administered,
+      appropriate_items_excluded: summary.n_appropriate_excluded,
       inappropriate_score: summary.inappropriate_score,
+      inappropriate_items_scored: summary.n_inappropriate,
+      inappropriate_items_administered: summary.n_inappropriate_administered,
+      inappropriate_items_excluded: summary.n_inappropriate_excluded,
       main_timeouts: summary.timeouts,
       toeic_listening_predicted: estimates.toeic_listening_predicted,
       toeic_status: estimates.toeic_status,
       cefr_reference: estimates.cefr_reference,
+      consent_version: state.participant?.consent_version || '',
+      consented_at_iso: state.participant?.consented_at_iso || '',
       researcher_code: normalizeResearchCode(state.config.researchCode) || '',
       user_agent: environment.user_agent,
       viewport_width: environment.viewport_width,
@@ -1766,7 +1866,9 @@
 
   function csvCell(value) {
     if (value === null || value === undefined) return '';
-    const s = String(value);
+    const isNumericValue = typeof value === 'number' && Number.isFinite(value);
+    let s = String(value);
+    if (!isNumericValue && (/^\s*[=+\-@]/.test(s) || /^[\t\r]/.test(s))) s = `'${s}`;
     if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
     return s;
   }
@@ -2242,11 +2344,11 @@
     }
   }
 
-  function readRecentParticipantId() {
+  function clearRecentParticipantId() {
     try {
-      return localStorage.getItem(STORAGE_RECENT_ID_KEY) || '';
+      localStorage.removeItem(STORAGE_RECENT_ID_KEY);
     } catch {
-      return '';
+      // Best-effort only.
     }
   }
 
@@ -2257,6 +2359,7 @@
       saved_at_iso: new Date().toISOString(),
       app_version: APP_VERSION,
       session_id: state.sessionId,
+      completed_at_iso: state.completedAtIso,
       config: state.config,
       participant: state.participant,
       mode: state.config.mode,
@@ -2268,6 +2371,7 @@
       practice_log: state.practiceLog.map(row => toPartialResponseRow(row, 'practice')),
       trial_log: state.trialLog.map(row => toPartialResponseRow(row, 'main')),
       stage: state.stage,
+      submission_status: state.submissionStatus,
       ui_lang: state.uiLang,
       started_from_researcher_setup: state.startedFromResearcherSetup,
       environment: getEnvironmentSnapshot()
@@ -2331,6 +2435,11 @@
     try {
       const snapshot = JSON.parse(raw);
       if (!snapshot || snapshot.app_version !== APP_VERSION || !snapshot.session_id || !snapshot.participant) return null;
+      const savedAt = Date.parse(snapshot.saved_at_iso || '');
+      if (Number.isFinite(savedAt) && Date.now() - savedAt > PARTIAL_STORAGE_TTL_MS) {
+        removePartialSession(storageKey);
+        return null;
+      }
       return {
         ...snapshot,
         storage_key: storageKey,
@@ -2373,12 +2482,15 @@
     state.responseOpen = false;
     state.currentPartialKey = snapshot.storage_key || partialStorageKeyForParticipant(state.participant.id);
     state.startedFromResearcherSetup = snapshot.started_from_researcher_setup === true;
+    state.submissionStatus = snapshot.submission_status || null;
     state.uiLang = snapshot.ui_lang === 'ja' ? 'ja' : UI_LANG_DEFAULT;
     document.documentElement.lang = state.uiLang;
     state.stage = snapshot.stage || null;
     savePartialSession();
 
-    if (state.stage === 'sound_check') {
+    if (state.stage === 'complete') {
+      renderResults();
+    } else if (state.stage === 'sound_check') {
       renderSoundCheck();
     } else if (state.stage === 'practice_intro') {
       renderPracticeIntro();
@@ -2403,6 +2515,23 @@
     } catch {
       // Local storage is best-effort only.
     }
+  }
+
+  function removeQueuedSubmissionForSession(sessionId) {
+    if (!sessionId) return;
+    try {
+      const remaining = readSubmissionQueue().filter(item => item.id !== sessionId);
+      writeSubmissionQueue(remaining);
+    } catch {
+      // Best-effort only.
+    }
+  }
+
+  function clearCurrentSessionData() {
+    removePartialSession(partialStorageKey());
+    removeQueuedSubmissionForSession(state.sessionId);
+    clearRecentParticipantId();
+    state.currentPartialKey = null;
   }
 
   function sleep(ms) {

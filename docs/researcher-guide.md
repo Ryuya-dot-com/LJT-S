@@ -27,11 +27,11 @@ Participants complete:
 
 - registration with anonymous ID by default;
 - optional name, school/group code, class code, and result recipient email;
-- consent/information confirmation when using public participant mode;
+- information confirmation in public, offline, and distributed `take=1` participant modes;
 - sound check;
 - 4 practice trials;
 - 40 main-test trials;
-- immediate raw score and accuracy;
+- immediate raw score, accuracy, and correct responses by item type;
 - CSV download and, if an email address was entered, attempted result email delivery.
 
 Early responses during audio playback are ignored. Responses are accepted after the audio ends.
@@ -61,17 +61,17 @@ Participants can always download a CSV at completion. The app attempts to start 
 
 ## 6. Offline Zip Administration
 
-Use `participant.html` for offline/zip administration. The participant opens the file locally, completes the task, and saves the CSV. If a GAS endpoint is configured and the network is available, email delivery may still be attempted; CSV remains the authoritative participant-side copy.
+Use the purpose-built `dist/LJT-S-offline-20260710.zip` package. After extracting it, the participant opens `START_HERE.html`, completes the task, and saves the CSV. CSS, item data, scoring, and app code are contained in that one HTML file; the adjacent `audio/` folder contains the 44 required M4A files. Email delivery is disabled in this package.
 
 ## 7. Endpoint Check
 
 Before distributing URLs, open the GAS Web App URL in a browser. A healthy endpoint returns JSON containing:
 
 ```json
-{"ok":true,"service":"LJT-S email delivery endpoint"}
+{"ok":true,"service":"LJT-S email delivery endpoint","recipient_mode":"research-code"}
 ```
 
-Then run one full session with your own recipient email address and confirm that the attached CSV arrives.
+Before publishing the safe GAS version, configure the server-side research-code recipient map described in `gas/README.md`. Update the existing Apps Script deployment to preserve its current `/exec` URL, then run one full session and confirm that the attachment reaches only the registered address.
 
 ## 8. Recommended Pilot Checks
 

@@ -1,6 +1,6 @@
 # LJT-S 公開ロードマップ
 
-最終更新: 2026-07-03
+最終更新: 2026-07-10
 リポジトリ: https://github.com/Ryuya-dot-com/LJT-S (GitHub Pages でホスト予定)
 
 ## 成果物(ゴール)
@@ -87,12 +87,15 @@
 - [x] `location.protocol === 'file:'` のとき「Generate participant URL」を非表示にし、説明文を表示
 - [x] Zip版はオフライン・CSV回収を基本とし、ネットワークがあればGAS送信も動く(失敗しても無害)設計
 - [x] **日英README同梱**: デスクトップ専用であること、実施手順、CSVの回収・取り扱い(実名を含む場合の注意)
-- [x] **リリースzip生成スクリプト**+GitHub Releases での配布(バージョンタグ)
+- [x] **リリースzip生成スクリプト**
+- [ ] GitHub Releases での配布(バージョンタグ)
+- [x] **オフライン専用単一HTML版**: `START_HERE.html` にCSS/データ/実装を内包し、44本のM4Aだけをsidecarとして同梱。メール送信は無効化
+- [x] **既存Zip互換パスの修復**: 0バイト音声とWAV混入を除去し、従来の `dist/LJT-S-online-20260701.zip` リンクも維持
 
 ## Phase 7 — リポジトリ整備・デプロイ
 
-- [ ] `Ryuya-dot-com/LJT-S` を作成し、現行 `online/` を初期コミット(git未初期化のため新規)
-- [ ] GitHub Pages 有効化(main / root または /docs)、HTTPSで公開URL確定
+- [x] `Ryuya-dot-com/LJT-S` を作成し、現行オンライン版を公開
+- [x] GitHub Pages 有効化(main / root)、HTTPS公開URL確定
 - [ ] `LICENSE`(素材のライセンス方針: SLA Speech Tools は CC 準拠 — チームで決定)、`CITATION.cff`、OSFプロジェクトへの相互リンク
 - [x] `APP_VERSION` の運用ルール(順序シードに影響するため、データ収集中はみだりに変えない)と、挙動識別用 `CODE_VERSION` を README に明記
 - [x] テストページにはアナリティクスを入れない(LexTaleの轍を踏まない)

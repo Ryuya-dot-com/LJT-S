@@ -16,12 +16,21 @@ window.LJT_SHORT_CONVERSION = (() => {
     .map(range => ({ level: range.cefr, min: range.toeicMin }))
     .reverse();
 
-  function estimateToeicListening({ rawScore } = {}) {
+  function estimateToeicListening({ rawScore, nItems } = {}) {
     const raw = Number(rawScore);
+    const administeredItems = Number(nItems);
     if (!Number.isFinite(raw)) {
       return {
         available: false,
         status: 'invalid_input'
+      };
+    }
+    if (!Number.isInteger(administeredItems) || administeredItems !== 40) {
+      return {
+        available: false,
+        status: 'incomplete_form',
+        rawScore: raw,
+        nItems: Number.isFinite(administeredItems) ? administeredItems : null
       };
     }
 
