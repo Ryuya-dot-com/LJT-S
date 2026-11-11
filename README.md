@@ -205,3 +205,10 @@ The current output is `dist/LJT-S-offline-20260710.zip`. The legacy web-layout a
 - `scripts/build-offline-package.sh`: builds the local-only single-HTML package.
 - `scripts/verify-offline-package.sh`: verifies package structure, embedded assets, and audio integrity.
 - `scripts/build-release-zip.sh`: release zip builder.
+
+
+## 一般向け・名前入力なしの簡易版
+
+https://ryuya-dot-com.github.io/LJT-S/public/
+
+40問。既存の40問用換算表をそのまま使用。 得点とCEFR参考目安を画面表示します。回答の送信・ファイル保存はありません。仕様・換算の制約は [public/README.md](public/README.md) を参照してください。
